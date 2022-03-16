@@ -39,4 +39,6 @@ for i in range(len(episodes)):
 	new_index.append(int(data[u'episodes'][i][u'index']))
 print new_index
 
+
+
 #print json.dump(new_data,f)

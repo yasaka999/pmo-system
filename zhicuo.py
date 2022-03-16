@@ -41,8 +41,7 @@ opener = urllib.request.build_opener(cook_hanlder)
 #带着参数 发送post请求
 #添加请求头
 headers = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Safari/537.36 Core/1.70.3650.400 QQBrowser/10.4.3341.4
-00"}
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Safari/537.36 Core/1.70.3650.400 QQBrowser/10.4.3341.400"}
 #1 参数 将来 需要转译 转码； 2 post 请求的 data 要求是bytes
 login_str = parse.urlencode(login_form_data).encode('utf-8')
 login_request = urllib.request.Request(login_url,headers=headers,data=login_str)

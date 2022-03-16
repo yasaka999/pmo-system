@@ -5,6 +5,7 @@ import os
 import sys  
 reload(sys)  
 sys.setdefaultencoding('utf8')
+'''
 #获取目录下的文件名（包括子目录下）
 def get_all_path(open_file_path):
     rootdir = open_file_path
@@ -25,8 +26,9 @@ if path=="":
 print "Please wait ... ,see the result.txt"
 #file_list= get_all_path("/opt/wacos/domain/2/testepgwwwroot/series")
 file_list= get_all_path(path)
+'''
 #写输出结果文件
-log = open('result.txt', 'w')
+#log = open('result.txt', 'w')
 for i in range(len(file_list)):
  try: 
   if "json" in file_list[i]: #只对json文件进行处理 

@@ -18,4 +18,4 @@ def get_all_path(open_file_path):
     return path_list
 
 file= get_all_path("/Users/hanxiong/test")
-print file
+print (file)
