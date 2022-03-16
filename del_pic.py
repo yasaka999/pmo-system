@@ -41,8 +41,8 @@ def dealprogram(programrecord):
     objects_node = doc.createElement("Objects")
     object_node = doc.createElement("Object")
     
-    object_node.setAttribute("Action","UPDATE")
-    object_node.setAttribute("Code",str(code))
+    object_node.setAttribute("Action", "REGISTER")
+    object_node.setAttribute("Code", str(code))
     object_node.setAttribute("ElementType","Program")
     object_node.setAttribute("ID",str(code))
 
