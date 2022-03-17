@@ -5,6 +5,7 @@ import cx_Oracle
 # from openpyxl import Workbook
 from openpyxl import load_workbook
 
+# trunk-ignore(flake8/E501)
 cx_Oracle.init_oracle_client(lib_dir="/Users/hanxiong/Downloads/instantclient_19_8")
 
 # 处理表格
@@ -73,6 +74,7 @@ conn = cx_Oracle.connect("wacos/nmBKsmp2015@172.25.116.5:1521/orcl")
 for program_name in list1:
     cursor = conn.cursor()
     sql = (
+        # trunk-ignore(flake8/E501)
         "select name 名称 ,contentprovider 内容提供商,code,status 状态,stockoutflag 出库标识 from program where name="
         + "'"
         + program_name
@@ -90,6 +92,7 @@ for program_name in list1:
 for program_name in list1:
     cursor = conn.cursor()
     sql = (
+        # trunk-ignore(flake8/E501)
         "select name 名称 ,contentprovider 内容提供商,code,status 状态,stockoutflag 出库标识 from series where name="
         + "'"
         + program_name
