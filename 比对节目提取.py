@@ -5,12 +5,14 @@
 # 3、除第1、2种情况的节目，采用节目名称全部文字进行后续处理。
 import re
 import time
+
 import cx_Oracle
-from openpyxl import load_workbook
+import openpyxl
+
 cx_Oracle.init_oracle_client(lib_dir="/Users/hanxiong/Downloads/instantclient_19_8")
 # 处理表格
 
-wb = load_workbook("../files/违规低俗下线节目汇总.xlsx", data_only=True)
+wb = openpyxl.load_workbook("../files/违规低俗下线节目汇总.xlsx", data_only=True)
 
 org_name = []
 out_name1 = []
@@ -66,7 +68,7 @@ file2.close
 # file3.close
 # file4.close
 file5.close
-print('文件名提取完成')
+print("文件名提取完成")
 # 查询数据库比对名称，采用精确匹配
 with open("../files/待比对节目名.txt", encoding="utf8") as f:
     list1 = f.read().split("\n")
@@ -82,15 +84,13 @@ for program_name in list1:
     nCount = nCount + 1
     if nCount % 100 == 0:
         print(now + " : Processed " + str(nCount) + " programs")
-#    cursor = conn.cursor()
+    #    cursor = conn.cursor()
     sql = (
         # trunk-ignore(flake8/E501)
         "select name,code,contentprovider,case status when '4' then '正常' when '9' then '已删除' else '其他' end,\
             case stockoutflag when '0' then '未出库' when '1' then '已出库' else '其他' end\
-                from program where name="
-        + "'"
-        + program_name
-        + "'"
+                from program where name='%s'"
+        % program_name
     )
     # 	print (sql)
     cursor.execute(sql)
@@ -99,7 +99,7 @@ for program_name in list1:
     # 		print (row)
     for i in row:
         print(i, file=file6)
-#cursor.close()
+# cursor.close()
 now = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
 print(now + " : Processed " + str(nCount) + " programs")
 file6.close
@@ -110,15 +110,13 @@ for program_name in list1:
     nCount = nCount + 1
     if nCount % 100 == 0:
         print(now + " : Processed " + str(nCount) + " seriess")
-#    cursor = conn.cursor()
+    #    cursor = conn.cursor()
     sql = (
         # trunk-ignore(flake8/E501)
         "select name,code,contentprovider,case status when '4' then '正常' when '9' then '已删除' else '其他' end,\
             case stockoutflag when '0' then '未出库' when '1' then '已出库' else '其他' end\
-                from series where name="
-        + "'"
-        + program_name
-        + "'"
+                from series where name='%s'"
+        % program_name
     )
     # 	print (sql)
     cursor.execute(sql)
