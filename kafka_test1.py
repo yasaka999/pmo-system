@@ -16,7 +16,7 @@ msg_a = {
         "password": "root",
     },
     "table": "msg",
-    "msg": "zabbix_test"
+    "msg": "zabbix_test",
 }
 msg = json.dumps(msg_a)
 producer.send("zabbix", msg_a)
