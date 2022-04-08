@@ -48,7 +48,7 @@ def FSMonitor(path="."):
     mask = IN_DELETE | IN_CREATE | IN_MODIFY | IN_ACCESS | IN_ATTRIB
     notifier = Notifier(wm, EventHandler())
     wm.add_watch(path, mask, rec=True)
-    print "now starting monitor %s" % (path)
+    print ("now starting monitor %s" % (path))
     while True:
         try:
             notifier.process_events()  # 绑定处理event方法
