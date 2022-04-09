@@ -17,38 +17,23 @@ from pyinotify import (
 
 
 class EventHandler(ProcessEvent):
-    """事件处理"""
-
     def process_IN_CREATE(self, event):
-        print (
-            time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-            + ": Create file: %s " % os.path.join(event.path, event.name)
-        )
+        print ("%s: Create file: %s " %(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()), os.path.join(event.path, event.name)))
         src_name = event.name
         if src_name.endswith(".txt"):
             map2 = mapping(map_file)
-            dst_name = map2[src_name.split(".")[0]]
-            shutil.copy(src_dir + "/" + src_name, dst_dir + "/" + dst_name + ".txt")
-            #            print ("copy  to " + dst_dir + " success")
-            shutil.copy(src_dir + "/" + src_name, dst_dir + "/" + dst_name + ".txt.ok")
+            dst_name = map2[src_name.split(".")[0]]+".txt"
+            shutil.copy(src_dir + "/" + src_name, dst_dir + "/" + dst_name)
+            shutil.copy(src_dir + "/" + src_name, dst_dir + "/" + dst_name + ".ok")
             shutil.move(src_dir + "/" + src_name, bak_dir + "/" + src_name)
-            #            print ("backup to " + bak_dir + " success")
-            print (
-                time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-                + ": convert "
-                + src_name
-                + " to "
-                + dst_name
-                + ".txt success"
-            )
-
+            print ("%s: Convert %s to %s sucess" %(time.strftime("%Y-%m-%d %H:%M:%S",time.localtime()),src_name,dst_name))
 
 def FSMonitor(path="."):
     wm = WatchManager()
     mask = IN_DELETE | IN_CREATE | IN_MODIFY | IN_ACCESS | IN_ATTRIB
     notifier = Notifier(wm, EventHandler())
     wm.add_watch(path, mask, rec=True)
-    print ("now starting monitor %s" % (path))
+    print "now starting monitor %s" % (path)
     while True:
         try:
             notifier.process_events()  # 绑定处理event方法
