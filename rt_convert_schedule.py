@@ -22,12 +22,17 @@ class EventHandler(ProcessEvent):
         src_name = event.name
         if src_name.endswith(".txt"):
             map2 = mapping(map_file)
-            dst_name = map2[src_name.split(".")[0]]+".txt"
-            shutil.copy(src_dir + "/" + src_name, dst_dir + "/" + dst_name)
-            shutil.copy(src_dir + "/" + src_name, dst_dir + "/" + dst_name + ".ok")
-            shutil.move(src_dir + "/" + src_name, bak_dir + "/" + src_name)
-            print ("%s: Convert %s to %s sucess" %(time.strftime("%Y-%m-%d %H:%M:%S",time.localtime()),src_name,dst_name))
-
+            if map2.has_key(src_name.split(".")[0]):
+                dst_name = map2[src_name.split(".")[0]]
+                print(src_name)
+                print(dst_name + ".txt")
+                shutil.copy(src_dir + "/" + src_name, dst_dir + "/" + dst_name + ".txt")
+                shutil.copy(src_dir + "/" + src_name, dst_dir + "/" + dst_name + ".txt.ok")
+                shutil.move(src_dir + "/" + src_name, bak_dir + "/" + src_name)
+                print ("%s: Convert %s to %s sucess" %(time.strftime("%Y-%m-%d %H:%M:%S",time.localtime()),src_name,dst_name))
+            else:
+                print("channel not exist, please add to map.txt")
+    
 def FSMonitor(path="."):
     wm = WatchManager()
     mask = IN_DELETE | IN_CREATE | IN_MODIFY | IN_ACCESS | IN_ATTRIB
