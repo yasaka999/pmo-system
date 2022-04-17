@@ -76,13 +76,13 @@ for program_name in list1:
     sql = (
         "select name,code,contentprovider,case status when '4' then '正常' when '9' then '已删除' else '其他' end,\
             case stockoutflag when '0' then '未出库' when '1' then '已出库' else '其他' end\
-                from program where name="
-        + "'"
-        + program_name
-        + "'"
+                from program where name=:1"
+#        + "'"
+#        + program_name
+#        + "'"
     )
     # 	print (sql)
-    cursor.execute(sql)
+    cursor.execute(sql, [program_name])
     row = cursor.fetchall()
     # 	if row:
     # 		print (row)

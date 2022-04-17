@@ -30,7 +30,7 @@ class EventHandler(ProcessEvent):
                 os.chmod(dst_dir + "/" + dst_name, 0777)
                 os.chmod(dst_dir + "/" + dst_name + ".ok", 0777)
                 shutil.move(src_dir + "/" + src_name, bak_dir + "/" + src_name)
-                print ("%s: Convert %s to %s sucess" %(time.strftime("%Y-%m-%d %H:%M:%S",time.localtime()),src_name,dst_name))
+                print ("%s: Convert %s to %s success" %(time.strftime("%Y-%m-%d %H:%M:%S",time.localtime()),src_name,dst_name))
             else:
                 shutil.move(src_dir + "/" + src_name, bak_dir + "/" + src_name)
                 print("ERROR: channel:%s not exist, please add to map.txt" %src_name.split(".")[0])
