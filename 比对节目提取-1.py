@@ -5,8 +5,6 @@
 # 3、除第1、2种情况的节目，采用节目名称全部文字进行后续处理。
 import re
 import time
-from token import TYPE_COMMENT
-
 import cx_Oracle
 import openpyxl
 
@@ -64,18 +62,21 @@ for n in range(len(out_name2)):
         print(out_name2[n] + "  |  ", out_name2[n], file=file1)
         print(out_name2[n], file=file5)
 
-file1.close
-file2.close
+file1.close()
+file2.close()
 # file3.close
 # file4.close
-file5.close
+file5.close()
 print("文件名提取完成")
+
 # 查询数据库比对名称，采用精确匹配
-with open("../files/待比对节目名.txt", encoding="utf8") as f:
+with open("../files/待比对节目名.txt") as f:
     list1 = f.read().split("\n")
-#     print(list1)
+# print(list1)
 print("比对开始，总共待比对节目: %d" % len(list1))
-def sql_compare(list1,media_type,file):
+
+
+def sql_compare(list1, media_type, file):
     conn = cx_Oracle.connect("wacos/oss@172.18.10.10:1521/orcl")
     cursor = conn.cursor()
     print("连接数据库成功")
@@ -88,21 +89,21 @@ def sql_compare(list1,media_type,file):
             print(now + " : Processed " + str(nCount) + " " + media_type)
         #    cursor = conn.cursor()
         sql_program = (
-            # trunk-ignore(flake8/E501)
-            "select %sid,name,code,contentprovider,case status when '4' then '正常' when '9' then '已删除' else '其他' end,\
+            (
+                # trunk-ignore(flake8/E501)
+                "select %sid,code,name,contentprovider,case status when '4' then '正常' when '9' then '已删除' else '其他' end,\
                 case stockoutflag when '0' then '回收' when '1' then '上线' else '其他' end, createdate\
                     from %s where name=:1"
-        ) % (media_type, media_type)
-        sql_domainobjects = (
-            "select d.name,b.createdate from \
-                (select domainid,createdate from domainobjects where objid=:1) b,domain d where b.domainid=d.domainid"
+            )
+            % (media_type, media_type)
         )
-        sql_ctmshistoryeventdetail = (
-            "select d.name,b.createdate from \
+        sql_domainobjects = "select d.name,b.createdate from \
+                (select domainid,createdate from domainobjects where objid=:1) b,domain d where b.domainid=d.domainid"
+        sql_ctmshistoryeventdetail = "select d.name,b.createdate from \
                 (select e.* from (select row_number() over(partition by c.domainid,c.objectaction order by c.underctmsnodeid ) rt,\
                     c.underctmsnodeid, c.domainid, c.objectaction,to_char(c.dispatchdetailcreatedate,'yyyy-mm-dd hh24:mi:ss') createdate from ctmshistoryeventdetail c \
                         where c.domainid is not null and c.objectaction='6' and c.objectid= :1)e where e.rt=1)b,\
-                            domain d  where b.domainid=d.domainid")
+                            domain d  where b.domainid=d.domainid"
         # 	print (sql)
         cursor.execute(sql_program, [program_name])
         program = cursor.fetchall()
@@ -113,7 +114,7 @@ def sql_compare(list1,media_type,file):
                 cursor.execute(sql_domainobjects, [i[0]])
                 domainobjects = cursor.fetchall()
                 for j in domainobjects:
-                    print (i[1], i[2], i[3], i[4], i[5], j[0], j[1], file=file)
+                    print(i[1], i[2], i[3], j[0], i[5], j[1], sep=",", file=file)
             else:
                 cursor.execute(sql_ctmshistoryeventdetail, [i[0]])
                 ctmshistoryeventdetail = cursor.fetchall()
@@ -122,14 +123,13 @@ def sql_compare(list1,media_type,file):
                         i[1],
                         i[2],
                         i[3],
-                        i[4],
-                        i[5],
                         k[0],
+                        i[5],
                         i[6],
                         k[1],
+                        sep=",", 
                         file=file,
                     )
-
 
     #        print(i, file=file6)
     cursor.close()
@@ -137,7 +137,8 @@ def sql_compare(list1,media_type,file):
     now = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
     print(now + " : Processed " + str(nCount) + " " + media_type)
     print("%s比对完成" % media_type)
-    file.close
+    file.close()
 
-sql_compare(list1,"program",file6)
-sql_compare(list1,"series",file7)
+
+sql_compare(list1, "program", file6)
+sql_compare(list1, "series", file7)
