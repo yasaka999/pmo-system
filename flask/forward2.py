@@ -1,6 +1,7 @@
-import json, urllib
+#encoding:utf8
+import json
 
-import requests
+import urllib2
 
 from flask import Flask, Response, jsonify, request
 
@@ -24,18 +25,16 @@ def proxy():
     json_data.update(modify_data)
     print("send data:", json_data)
     #headers = {h[0]: h[1] for h in request.headers}
-    url = "http://192.168.5.183:6000/aaa"
+    url = "http://127.0.0.1:1010/aaa"
     data = json.dumps(json_data)
-    data = bytes(data, encoding="utf8")
-    print(data)
-    print(request.headers)
+    data = bytes(data)
     headers = {"Content-Type": 'application/json'}
-    req = urllib.request.Request(url=url, data=data, headers=headers)
-    r = urllib.request.urlopen(req).read()
+    req = urllib2.Request(url=url, data=data, headers=headers)
+    r = urllib2.urlopen(req).read()
     #r = requests.request(request.method,url, data=data, headers=request.headers)
     print("response data:", r)
     return r
 
 
 if __name__ == "__main__":
-    app.run(port=5000, debug=True)
+    app.run(host="0.0.0.0", port=1011, debug=True)
