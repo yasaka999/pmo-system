@@ -7,14 +7,20 @@ from flask import Flask, Response, jsonify, request
 app = Flask(__name__)
 app.config["JSON_AS_ASCII"] = False
 
+
 @app.before_request
 def proxy():
     print(request.headers)
     json_data = request.json
     del_data = ["TeamID", "City"]
-    modify_data ={"新字段": "随便定义","Carrier": 5, "address": "陕西省西安市雁塔区", "name": "张三"}
-    print("received data:",json_data)
-    [json_data.pop(key,0) for key in del_data]
+    modify_data = {
+        "新字段": "随便定义",
+        "Carrier": 5,
+        "address": "陕西省西安市雁塔区",
+        "name": "张三"
+    }
+    print("received data:", json_data)
+    [json_data.pop(key, 0) for key in del_data]
     json_data.update(modify_data)
     print("send data:", json_data)
     #headers = {h[0]: h[1] for h in request.headers}
@@ -23,12 +29,13 @@ def proxy():
     data = bytes(data, encoding="utf8")
     print(data)
     print(request.headers)
-    headers = {"Content-Type":'application/json'}
+    headers = {"Content-Type": 'application/json'}
     req = urllib.request.Request(url=url, data=data, headers=headers)
     r = urllib.request.urlopen(req).read()
     #r = requests.request(request.method,url, data=data, headers=request.headers)
-    print("response data:",r)
+    print("response data:", r)
     return r
+
 
 if __name__ == "__main__":
     app.run(port=5000, debug=True)
