@@ -75,6 +75,7 @@ with open("../files/待比对节目名.txt", encoding="utf8") as f:
 #     print(list1)
 print("比对开始，总共待比对节目: %d" % len(list1))
 
+
 def sql_compare(list1, type, file):
     conn = cx_Oracle.connect("wacos/oss@172.18.10.10:1521/orcl")
     cursor = conn.cursor()
@@ -86,27 +87,31 @@ def sql_compare(list1, type, file):
         nCount = nCount + 1
         if nCount % 100 == 0:
             print(now + " : Processed " + str(nCount) + " " + type)
-    #    cursor = conn.cursor()
+        #    cursor = conn.cursor()
         sql = (
-        # trunk-ignore(flake8/E501)
-            "select name,code,contentprovider,case status when '4' then '正常' when '9' then '已删除' else '其他' end,\
+            (
+                # trunk-ignore(flake8/E501)
+                "select name,code,contentprovider,case status when '4' then '正常' when '9' then '已删除' else '其他' end,\
                 case stockoutflag when '0' then '未出库' when '1' then '已出库' else '其他' end\
                     from %s where name=:1"
-        ) % type
-    # 	print (sql)
+            )
+            % type
+        )
+        # 	print (sql)
         cursor.execute(sql, [program_name])
         row = cursor.fetchall()
         # 	if row:
         # 		print (row)
         for i in row:
             print(i, file=file)
-   
+
     now = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
     print(now + " : Processed " + str(nCount) + " " + type)
     file.close
     cursor.close()
     conn.close()
     print("%s比对完成" % type)
+
 
 sql_compare(list1, "program", file6)
 sql_compare(list1, "series", file7)
