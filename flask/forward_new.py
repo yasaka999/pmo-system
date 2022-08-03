@@ -21,6 +21,9 @@ def requestService():
     print("send data:", json_data)
     #headers = {h[0]: h[1] for h in request.headers}
     url = config["forward_url"]
+    if "AccountType" not in json_data.keys():
+        url = url + "/newurl"  
+    print(url)    
     r = requests.request(request.method,
                          url,
                          data=json.dumps(json_data),

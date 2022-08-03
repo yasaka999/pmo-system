@@ -1,6 +1,8 @@
 #! /usr/bin/python  
+from stringprep import in_table_d1
+from textwrap import indent
 import urllib
-import time
+import json
  
 def tcpdump():  
     import subprocess, fcntl, os  
@@ -40,5 +42,9 @@ proc = tcpdump()
 while True:  
     text = poll_tcpdump(proc)  
     if text:  
-        print '>>> ' + urllib.unquote(text)
+#        print '>>> ' + urllib.unquote(text)
+        text=urllib.unquote(text)
+        ind1 = text.index("{")
+        ind2 = text.index("}")
+        print(json.dumps(json.loads(text[ind1 : ind2 + 1]), indent=2, sort_keys=False, ensure_ascii=False))
         #print '--- ' + time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
