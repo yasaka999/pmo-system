@@ -17,10 +17,10 @@ channel_name = sys.argv[2]
 start_date = sys.argv[3]
 tmp_date = datetime.datetime.strptime(start_date, '%Y%m%d')
 new_date = tmp_date.strftime('%Y%m%d')
-out_file = open(in_file[:-4]+"-format.txt", "w")
+out_file = open(in_file[:-4]+'-format.txt', 'w')
 print("Channel:%s" % channel_name, file=out_file)
 print("Date:%s" % new_date, file=out_file)
-with open(in_file, encoding="utf8") as f:
+with open(in_file, encoding='utf8') as f:
     list1 = f.read().split("\n")
     list2 = []
     for i in range(len(list1)):
@@ -40,7 +40,6 @@ with open(in_file, encoding="utf8") as f:
             list_temp = []
             list_temp.append(list1[i][:5])
             list_temp.append(list1[i][5:])
-
             list2.append(list_temp)
     for i in range(len(list2)):
         if i < len(list2) - 1:

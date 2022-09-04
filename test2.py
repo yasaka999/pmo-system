@@ -6,3 +6,6 @@ p1 = re.compile(r'[{](.*?)[}]', re.S)
 #print (arr)
 for i in a:
         print (i)
+
+a = open("result.txt", "r")
+print (a.read())
