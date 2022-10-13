@@ -43,7 +43,7 @@ def query(url,pageid=1,rownum=100):
     end_time = tomorrow.strftime('%Y-%m-%d') + " 23:59:59"
     headers ={
         "User-Agent": "Chrome/70.0.3538.25",
-        "Referer": "http://192.168.5.1:5050/CMS/channel/scheduleAssortQueryInit?moduleId=52" 
+        "Referer": "http://10.180.2.4:8080/CMS/channel/scheduleAssortQueryInit?moduleId=52" 
         }
     data = {
         "channelIds":"", 
@@ -71,8 +71,8 @@ if __name__ == "__main__":
     result_file = open("result.txt", "w")
     pageid = 1
     rownum = 1000
-    login_url = "http://192.168.5.1:5050/CMS/login"
-    query_url = "http://192.168.5.1:5050/CMS/channel/scheduleAssortQuery"
+    login_url = "http://10.180.2.4:8080/CMS/login"
+    query_url = "http://10.180.2.4:8080/CMS/channel/scheduleAssortQuery"
     username = "UDwangluo"
     password = "888888"
 
@@ -107,7 +107,6 @@ print ("----------------------------------------------------------------",file=r
 channel_miss=[]
 for channel_name in channel:
     if channel_name+"节目单" not in channel_list:
-    if channel_name+"节目单" not in channel_list:
         channel_miss.append(channel_name)
 if channel_miss:
     print ("共有%s个频道节目单缺失: " % len(channel_miss),file=result_file)
@@ -124,7 +123,7 @@ smtpserver = 'smtp.163.com'         # 发件服务器
 port = 0                            # 端口
 sender = '13666633777@163.com'         # 发件人邮箱
 psw = 'XSBTZQCZBGWQVYYG'                            # 发件人密码
-receiver = ["glen.an@utstarcom.cn","colin.tang@utstarcom.cn","wusheng.sang@utstarcom.cn","hans.han@utstarcom.cn"]       # 接收人
+receiver = ["hans.han@utstarcom.cn"]       # 接收人
 # 邮件标题
 subjext = '每日节目单检查%s' %now.strftime('%Y-%m-%d')
 # 获取附件信息

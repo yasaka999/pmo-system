@@ -1,16 +1,8 @@
-#coding:utf
-with open('fav_test.log') as file_object:
-        for line in file_object:
-                line=line.strip('\n')
-                if line !='':
-                        line=eval(line)
-                        print (line)
-                else:
-                        print ('hahaha')
-
-for i in line:
-        print (i)
-#                print (line)
-#                print (line[0])
-#                for i in range(len(line)):
-#                    print (i)
+set1={1,2,3}
+set2={1,2,3}
+diff = set1.symmetric_difference(set2)
+if not diff:
+    print ("same")
+    print (diff)
+else:
+    print (diff)

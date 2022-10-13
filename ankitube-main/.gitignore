@@ -1,0 +1,13 @@
+# created by virtualenv automatically
+*.log
+.templates
+.vscode
+bin
+lib
+media
+undefined
+*.cfg
+*.js
+lib64
+share
+ankitube.ui.old

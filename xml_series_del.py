@@ -28,12 +28,12 @@ def saveXML(root, filename, indent="\t", newl="\n", encoding="utf-8"):
         dom.writexml(f, "", indent, newl, encoding)
 
 if __name__ == '__main__':
-    with open ('../files/hlj_program.csv' ,mode='r',encoding='utf-8') as f:
+    with open ('../files/hlj_series_code.csv' ,mode='r',encoding='utf-8') as f:
         reader= csv.reader(f)
         for row in reader:
             print(row)
-            root = object_deal('Program', row)
-            saveXML(root, '../files/temp/hlj_del_program_%s.xml '%row[0])
+            root = object_deal('Series', row)
+            saveXML(root, '../files/temp/del_series_%s.xml '%row[0])
 #    code_list = ('123456', '测试节目2')
 #    root_xml= object_deal('Program', code_list)
 #    saveXML(root_xml, '../files/delProgram_%s.xml' %code_list[0])
