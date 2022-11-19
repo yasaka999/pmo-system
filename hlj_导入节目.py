@@ -108,11 +108,11 @@ for i in range(len(cases)) :
         root_xml = ET.Element("ADI")
         root_xml.set("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance")
         objects = ET.SubElement(root_xml, "Objects")
-#        mappings = ET.SubElement(root_xml, "Mappings")
+#/        mappings = ET.SubElement(root_xml, "Mappings")
     # crteate program
         code = 'HLJDEMO000000'+str(30000+i)
         mcode = 'HLJDEMO000000'+str(22000+i)
-        print (code,cases[i]['Name'],file=file)
+        print (code,cases[i]['Name'],sep ='|',file=file)
         object_deal('Program', cases[i],code,mcode)
         tree = ET.ElementTree(root_xml)
         saveXML(root_xml, "../files/hlj_program_%s.xml" %code)

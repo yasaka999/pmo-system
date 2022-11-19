@@ -3,7 +3,12 @@ import sys
 
 def xml_parser(filename):
     list = []
-    tree = ET.parse(filename)
+    file = open(filename)
+    ori_xml = file.read()
+    file.close()
+    xml = ori_xml.replace("utf-8","GBK")
+    print (xml)
+    tree = ET.parse(ET.fromstring(xml))
     root = tree.getroot()
     for child in root:
         a = child.tag
