@@ -93,76 +93,76 @@ ftp_dir = 'ftp://wacos:wacos@172.25.130.5//opt/wenke/expxml_program/data/picture
 object_map = ['FileURL', 'Name', 'OriginalName', 'SortName', 'SearchName', 'Director', 'Kpeople', 'Description', 'Price',\
      'ReleaseYear', 'SeriesType', 'CopyRight', 'ContentProvider', 'VSPCode', 'VolumCount', 'ScriptWriter', 'Compere',\
           'Guest', 'Reporter', 'LicensingWindowStart', 'LicensingWindowEnd', 'SeriesFlag','Language','Duration',\
-               'Status', 'SPCode', 'Genre', 'ScreenFormat', 'MediaSpec', 'Type', 'PriceTaxIn', 'SourceType','OrgAirDate','OPIncharge']
-conn = cx_Oracle.connect("wacos/nmBKsmp2015@172.25.116.5:1521/orcl")
+               'Status', 'SPCode', 'Genre', 'ScreenFormat', 'MediaSpec', 'Type', 'PriceTaxIn', 'SourceType','OrgAirDate']
+conn = cx_Oracle.connect("sx0351yd/sx0351yd@172.19.97.211:1521/orcl")
 cr = conn.cursor()
 nCount = 0
-sql = "SELECT A.SeriesID, A.CODE,A.NAME,A.ALIAS OriginalName,\
+sql = "SELECT A.ProgramID, A.CODE,A.NAME,A.ALIAS OriginalName,\
     A.TITLE_SORT_NAME SortName,A.TITLE_SEARCH_NAME SearchName,substr(A.Director,0,47) Director,\
-        substr(A.Kpeople,0,147) Kpeople,to_char(A.VALIDTHROUGH,'YYYYMMDDHH24MiSS') LicensingWindowStart, \
-            to_char(A.VALIDUNTIL,'YYYYMMDDHH24MiSS') LicensingWindowEnd,\
-                A.DESCRIPTION,A.PRICE PriceTaxIn, A.VolumCount,\
+        substr(A.Kpeople,0,147) Kpeople,to_char(A.LICENSINGWINDOWSTART,'YYYYMMDDHH24MiSS') LicensingWindowStart, \
+            to_char(A.LICENSINGWINDOWEND,'YYYYMMDDHH24MiSS') LicensingWindowEnd,A.SeriesFlag,\
+                A.LANGUAGE,A.DESCRIPTION,A.PRICE PriceTaxIn,A.SourceType,\
                     A.ReleaseYear,C.Code VSPCode,A.CopyRight, A.ContentProvider,\
-                        substr(A.ScriptWriter,0,47) ScriptWriter,\
+                        ceil(to_number(nvl(A.Duration,'0'))/1500) Duration,substr(A.ScriptWriter,0,47) ScriptWriter,\
                             substr(A.Compere,0,47) Compere,substr(A.Guest,0,47) Guest,substr(A.Reporter,0,47) Reporter,\
-                                A.OPIncharge,B.Status, A.Genre,A.overduetime,\
-                                    A.NewPrice,A.Rating,A.ORGAIRDATE from series A, domainobjects B,\
-                                         vsp C  where A.SeriesID=B.ObjID and A.VSPID=C.VSPID and B.ObjType='35' \
-                                              and B.DomainID=1 and A.status='4' and rownum<15"
+                                A.OPIncharge,B.Status, A.Genre,A.LinkURL,A.overduetime,\
+                                    A.NewPrice,A.Rating,A.ORGAIRDATE from program A, domainobjects B,\
+                                         vsp C  where A.ProgramID=B.ObjID and A.VSPID=C.VSPID and B.ObjType='1' \
+                                             and B.DomainID=1 and A.status='4' and rownum<10"
 
 cr.execute(sql)
 rs = cr.fetchone()
-series_columns = [column[0] for column in cr.description]
+program_columns = [column[0] for column in cr.description]
 
-print("Begin process exp series")
+print("Begin process exp programs")
 while rs:
-#    print(rs[0])
-    series_object = [dict(zip(series_columns, rs))]
-    #    print(series_object)
+    # print(rs[0])
+    program_object = [dict(zip(program_columns, rs))]
+    #    print(program_object)
 
-    sqlpicture = "select a.code mappingcode,c.code code, 'ftp://wacos:wacos@172.25.130.5//opt/wenke/expxml_series/data/picture/'||c.picture FileURL,\
-        decode(b.picturetypeid,400,0,401,1,402,2,403,3,404,4,405,5,406,6,407,7,0) type,\
-            b.sequence sequence from series a,picturemap b,metapicture c \
-              where b.objtype='5'   and a.seriesid=b.objid and b.metapictureid=c.metapictureid and a.seriesid=%d" % (rs[0])
+    sqlmovie = "select contentname name ,a.code code,a.fileurl,b.code mappingcode,c.MediaSpec MediaSpec,type,SCREEN_FORMAT SCREENFORMAT from mediacontent a,program b ,contentdef c where a.ContentDefID=c.ContentDefID and a.status='4'  and mediacontentid in ( \
+        select  mediacontentid from programmediacontent where objtype= '1' and objid=%d) and b.programid=%d" % (
+        rs[0], rs[0])
+    movie_object = sql_object(sqlmovie, conn)
+    # print(movie_object)
+
+    sqlpicture = "select a.code mappingcode,c.code code, 'ftp://wacos:wacos@172.25.130.5//opt/wenke/expxml_program/data/picture/'||c.picture FileURL,decode(b.picturetypeid,400,0,401,1,402,2,403,3,404,4,405,5,406,6,407,7,0) type,b.sequence sequence from program a,picturemap b,metapicture c \
+              where b.objtype='4'   and a.programid=b.objid and b.metapictureid=c.metapictureid and a.programid=%d" % (rs[0])
     picture_object = sql_object(sqlpicture, conn)
     # print(picture_object)
-
-    sqlseriesdtl = "select c.code,a.code mappingcode,b.seq sequence \
-              from series a ,seriesdtl b,program c where a.seriesid=b.seriesid \
-                and b.programid=c.programid and a.seriesid=%d order by b.seq" % (rs[0])
-    seriesdtl_object = sql_object(sqlseriesdtl, conn)
 
     nCount = nCount + 1
     now = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
     if (nCount % 10 == 0):
-        print(now + " : Processed " + str(nCount) + " series")
+        print(now + " : Processed " + str(nCount) + " programs")
 
     root_xml = ET.Element("ADI")
     root_xml.set("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance")
     objects = ET.SubElement(root_xml, "Objects")
     mappings = ET.SubElement(root_xml, "Mappings")
-    # crteate series
-    s_delcolumn = ('SERIESID', 'CODE')
-    for i in series_object:
-        object_deal('Series', i, s_delcolumn)
+    # crteate program
+    p_delcolumn = ('PROGRAMID', 'CODE')
+    for i in program_object:
+        object_deal('Program', i, p_delcolumn)
+
+    # create movie
+    m_delcolumn = ('CODE','MAPPINGCODE')
+    for j in movie_object:
+        object_deal('Movie', j, m_delcolumn)
+        mapping_deal('Program','Movie', j)
 
     # create picture
     pic_delcolumn = ('CODE', 'SEQUENCE', 'TYPE', 'MAPPINGCODE')
     for k in picture_object:
         object_deal('Picture', k, pic_delcolumn)
-        mapping_deal('Picture','Series', k)
-    
-    # create seriesdtl
-    for l in seriesdtl_object:
-        mapping_deal('Series','Program', l)
-
+        mapping_deal('Picture','Program', k)
 
     tree = ET.ElementTree(root_xml)
-    saveXML(root_xml, "../files/c2_series_%s.xml" % i['SERIESID'])
+    saveXML(root_xml, "../files/c2_program_%s.xml" % i['PROGRAMID'])
     rs = cr.fetchone()
 
 now = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-print(now + " : Processed " + str(nCount) + " series")
-print("Finished process exp series")
+print(now + " : Processed " + str(nCount) + " programs")
+print("Finished process exp programs")
 cr.close()
 conn.close()

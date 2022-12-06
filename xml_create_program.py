@@ -116,7 +116,7 @@ program_columns = [column[0] for column in cr.description]
 
 print("Begin process exp programs")
 while rs:
-    print(rs[0])
+    # print(rs[0])
     program_object = [dict(zip(program_columns, rs))]
     #    print(program_object)
 

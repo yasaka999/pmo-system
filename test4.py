@@ -1,25 +1,10 @@
 import re
-out_file = open('../files/error.txt', 'w')
-with open('../files/index_old.txt') as file:
-    d={}
-    for index in file:
-        index=index.rstrip()
-        user =re.findall(r'aaa_index_user_products_(.+?) ',index)[0]
-        product=index.split(' ')[1].split(',')
-        d[user] =product
+def substr(keyword,str):
+    result = re.findall('%s.*>(.+?)</%s' %(keyword,keyword) ,str)[0]
+    return result
 
-#print (d['315208140107901'])
-with open('../files/product_old.txt') as f:
-    for line in f:
-        line = line.rstrip()
-        p_user = '_'.join(line.split('_')[3:5])
-        p_code = '_'.join(line.split('_')[5:])
-#        print (p_user, p_code)
-        if p_user in d.keys():      
-            if p_code not in d[p_user]:
-            
-                print (p_user,p_code,file=out_file)
-        else:
-            print (p_user,p_code,file=out_file)
-
-file.close()
+str = '<?xml version="1.0" encoding="utf-8"?><SOAP-ENV:Envelope xmlns:SOAP-ENC="http://schemas.xmlsoap.org/soap/encoding/" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:impl="iptv" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><SOAP-ENV:Header/><SOAP-ENV:Body><impl:ResultNotify><CSPID >cspid</CSPID><LSPID>lspid</LSPID><CorrelateID>correlateid</CorrelateID><CmdResult>0</CmdResult><ResultFileURL>ftp</ResultFileURL></impl:ResultNotify></SOAP-ENV:Body></SOAP-ENV:Envelope>'
+cspid = substr('CSPID',str)
+lspid = substr('LSPID',str)
+correlateid = substr('CorrelateID',str)
+print (cspid,lspid,correlateid)

@@ -102,7 +102,7 @@ package_columns = [column[0] for column in cr.description]
 
 print("Begin process exp packages")
 while rs:
-    print(rs[0])
+    # print(rs[0])
     package_object = [dict(zip(package_columns, rs))]
 
     sqlpicture = "select a.code mappingcode,c.code code, 'ftp://wacos:wacos@172.25.130.5//opt/wenke/expxml_program/data/picture/'||c.picture FileURL,decode(b.picturetypeid,400,0,401,1,402,2,403,3,404,4,405,5,406,6,407,7,0) type,\

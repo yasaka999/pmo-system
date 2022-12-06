@@ -1,6 +1,6 @@
 from xml.etree import ElementTree as ET
 import sys
-
+ok
 def xml_parser(filename):
     list = []
     file = open(filename)

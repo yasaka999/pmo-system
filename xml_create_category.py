@@ -58,7 +58,7 @@ def mapping_deal(parenttype,elementtype,dic):
         mapping.set("ParentCode", dic['MAPPINGCODE'])
         mapping.set("ParentID", dic['MAPPINGCODE'])
         mapping.set("ParentType", parenttype)
-        if parenttype == "Series":
+        if parenttype in ("Series","Category"):
             property = ET.SubElement(mapping, "Property")
             property.set("Name", 'Sequence')
             property.text = str(dic['SEQUENCE'])
@@ -91,14 +91,14 @@ def saveXML(root, filename, indent="\t", newl="\n", encoding="utf-8"):
 ftp_dir = 'ftp://wacos:wacos@172.25.130.5//opt/wenke/expxml_program/data/picture/'
 # xml文件中的所有字段要在这里完全一致
 object_map = [ 'Name', 'ParentCode','Sequence' ,'ParentID','Status','Description']
-conn = cx_Oracle.connect("wacos/nmBKsmp2015@172.25.116.5:1521/orcl")
+conn = cx_Oracle.connect("sx0351yd/sx0351yd@172.19.97.211:1521/orcl")
 cr = conn.cursor()
 nCount = 0
 sql = "select b.categoryid,b.code,b.name,b.seq sequence,c.code parentcode,c.code parentid,b.status,b.description \
     from  ( select categoryid,nvl(parentid,0) nparentid,level nlevel  from category \
         connect by prior categoryid=parentid   start with parentid is null ) a, category b ,\
             (select categoryid,code from category union select 0,'0' from dual) c   \
-                where a.categoryid=b.categoryid  and a.nparentid=c.categoryid and  domainid='1' and rownum<200"
+                where a.categoryid=b.categoryid  and a.nparentid=c.categoryid and  domainid='8' and rownum<200"
 
 #sql=sqlbase+' '+sqlwhere
 #print "GetData SQL: ",sql
@@ -108,7 +108,7 @@ category_columns = [column[0] for column in cr.description]
 
 print("Begin process exp categorys")
 while rs:
-    print(rs[0])
+    # print(rs[0])
     category_object = [dict(zip(category_columns, rs))]
 
     sqlpicture = "select a.code mappingcode,c.code code, 'ftp://wacos:wacos@172.25.130.5//opt/wenke/expxml_program/data/picture/'||c.picture FileURL,decode(b.picturetypeid,400,0,401,1,402,2,403,3,404,4,405,5,406,6,407,7,0) type,b.sequence sequence from category a,picturemap b,metapicture c \
@@ -116,13 +116,13 @@ while rs:
     picture_object = sql_object(sqlpicture, conn)
 #    print(picture_object)
 
-    sqlcategorydtl = "select code,categorycode mappingcode,objtype from \
-        (select a.code,c.code categorycode ,b.objtype,c.categoryid,a.name,c.name categoryname,b.objid from \
+    sqlcategorydtl = "select code,categorycode mappingcode,objtype,sequence from \
+        (select a.code,c.code categorycode ,b.objtype,c.categoryid,a.name,c.name categoryname,b.objid,b.sequence from \
             program a,categorydtl b ,category c where b.objtype='8' and b.objid=a.programid and b.categoryid=c.categoryid\
-                 union select a.code,c.code categorycode ,b.objtype,c.categoryid,a.name,c.name categoryname,b.objid \
+                 union select a.code,c.code categorycode ,b.objtype,c.categoryid,a.name,c.name categoryname,b.objid,b.sequence \
                     from series a,categorydtl b ,category c where b.objtype='1' and b.objid=a.seriesid and\
                          b.categoryid=c.categoryid union select a.code,c.code categorycode ,b.objtype,c.categoryid,a.name,\
-                            c.name categoryname,b.objid from channel a,categorydtl b ,category c where b.objtype='C' and \
+                            c.name categoryname,b.objid,b.sequence from channel a,categorydtl b ,category c where b.objtype='C' and \
                                 b.objid=a.channelid and b.categoryid=c.categoryid) where categoryid =%d" % (rs[0]) 
     categorydtl_object = sql_object(sqlcategorydtl,conn)
 #    print (categorydtl_object)

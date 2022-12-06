@@ -1,8 +1,6 @@
 from xml.etree import ElementTree as ET
 import sys
-# python2下编码格式如有问题，去掉下面两行注释
-# reload(sys)
-# sys.setdefaultencoding('utf-8')
+
 def xml_parser(filename):
     list = []
     tree = ET.parse(filename)
@@ -23,14 +21,7 @@ def xml_parser(filename):
             for object in node:
                 list.append(a+'|'+b+'|'+object.attrib['Name']+':'+str(object.text))
     return list
-
 if __name__ == '__main__':
-    list1 = xml_parser(sys.argv[1])
-    list2 = xml_parser(sys.argv[2])
-    diff = set(list1).symmetric_difference(set(list2))
-    diff = sorted(list(diff))
-    if not diff:
-        print (" no difference ! ")
-    else:
-        for i in diff:
-            print (i)
+    list1= xml_parser("../files/c2-1.xml")
+    for i in list1:
+        print (i)

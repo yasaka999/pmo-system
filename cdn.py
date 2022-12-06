@@ -40,7 +40,7 @@ def doPost(url, data=None):
 
 soap_response = '<?xml version="1.0" encoding="utf-8"?><soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" \
 xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">\
-<soapenv:Body><ns1:ExecCmdResponse soapenv:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"xmlns:ns1="iptv">\
+<soapenv:Body><ns1:ExecCmdResponse soapenv:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" xmlns:ns1="iptv">\
 <ExecCmdReturn xsi:type="ns1:CSPResult"><Result xsi:type="xsd:int">0</Result><ErrorDescription xsi:type="soapenc:string" \
 xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/">Receive the request:and ready to process.</ErrorDescription></ExecCmdReturn>\
 </ns1:ExecCmdResponse></soapenv:Body></soapenv:Envelope>'

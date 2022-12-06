@@ -92,7 +92,9 @@ ftp_dir = 'ftp://wacos:wacos@172.25.130.5//opt/wenke/expxml_program/data/picture
 # xml文件中的所有字段要在这里完全一致
 object_map = ['Name', 'ChannelNumber', 'Description', 'CallSign', 'TimeShift',\
      'Type','ChannelCode','BitrateType','MultiCastIP','MultiCastPort']
-conn = cx_Oracle.connect("wacos/nmBKsmp2015@172.25.116.5:1521/orcl")
+#conn = cx_Oracle.connect("wacos/nmBKsmp2015@172.25.116.5:1521/orcl")
+conn = cx_Oracle.connect("sx0351yd/sx0351yd@172.19.97.211:1521/orcl")
+
 cr = conn.cursor()
 nCount = 0
 sql = "select channelid,code,name,channelnumber,type,callsign,timeshift,Description from channel where status='4'"
@@ -105,7 +107,7 @@ channel_columns = [column[0] for column in cr.description]
 
 print("Begin process exp channels")
 while rs:
-    print(rs[0])
+    # print(rs[0])
     channel_object = [dict(zip(channel_columns, rs))]
 
     sqlphysicalchannel = "select a.code channelcode ,b.code code ,b.bitratetype,b.sourceip MultiCastIP,b.sourceport MultiCastPort \
