@@ -1,11 +1,37 @@
-import re
-a=[{"createtime":"20210806120548","mark":"13","mc":"00000001000000050000000000000602","mode":"1","name":"CCTV-13高清","pic":"无","st":"1","type":"tv","userid":"01-01016790359-01"},{"createtime":"20210806120611","mark":"5","mc":"01010001000000050000000000000371","mode":"1","name":"CCTV-5高清","pic":"无","st":"2","type":"tv","userid":"01-01016790359-01"},{"createtime":"20210806120648","mark":"18","mc":"00000001000000050000000000000153","mode":"1","name":"CCTV-5+","pic":"无","st":"2","type":"tv","userid":"01-01016790359-01"}]
-p1 = re.compile(r'[{](.*?)[}]', re.S) 
-#print (a)
-#arr = re.findall(p1,a[0])
-#print (arr)
-for i in a:
-        print (i)
+import pymysql
+import yaml
+import datetime
 
-a = open("result.txt", "r")
-print (a.read())
+
+def DupSchedule(schannel,dchannel,airdate):
+        db = pymysql.connect(host=config['MYSQL']['host'],
+                     user=config['MYSQL']['user'],
+                     password=config['MYSQL']['password'],
+                     database=config['MYSQL']['database'])
+        cursor = db.cursor()
+        sql = "SELECT s.play_date,cast(s.play_start_date as char) ,cast(s.play_end_date as char),s.schedule_name \
+                from cms_pre_schedule_base s, cms_pre_channel c where c.out_source_id=s.channel_out_source_id \
+                        and c.is_cp_delete=0 and c.channel_name= %s and s.play_date>=%s order by s.play_start_date"
+        cursor.execute(sql,(schannel,airdate))
+        data = cursor.fetchall()
+        cursor.close()
+        db.close()
+        print ('Channels:%s' % dchannel)
+        print ('Date:'+str(airdate))
+        for i in data:
+                if i[0]!=airdate:
+                        print ('Date:'+str(i[0]))
+                        airdate = i[0]
+                        print (i[1][11:16].replace(':','')+'-'+i[2][11:16].replace(':','')+'|'+i[3])
+                else:
+                        print (i[1][11:16].replace(':','')+'-'+i[2][11:16].replace(':','')+'|'+i[3])
+with open("../files/channel_config.yml", "r") as f:
+    config = yaml.safe_load(f)
+#print (config)
+#channelname =config['CHANNELS'][0].keys()
+
+#airdate=(datetime.datetime.today()+datetime.timedelta(days=1)).strftime("%Y%m%d")
+airdate = '20221209'
+for i in range(len(config['CHANNELS'])):
+        for schannel,dchannel in config['CHANNELS'][i].items():
+                DupSchedule(schannel,dchannel,airdate)

@@ -1,14 +1,13 @@
-#!/usr/bin/python
 # -*- coding:utf-8 -*-
 import os
 import shutil
 import time
 import datetime
 import codecs, sys
-import cx_Oracle
-import ConfigParser
+import pymysql
 #reload(sys)
 #sys.setdefaultencoding('utf8')
+
 def DupSchedule (sChannel,dChannel):
     airdate=(datetime.datetime.today()+datetime.timedelta(days=1)).strftime("%Y%m%d")
     f.write("Channel:"+dChannel+"\n")
