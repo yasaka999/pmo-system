@@ -44,7 +44,7 @@ def object_deal(name, code,mcode,scode):
     property.text = name
     property = ET.SubElement(object, "Property")
     property.set("Name", "FileURL")
-    property.text = "ftp://staimspftp:staimspftp@172.25.127.6/media/20180714/734.ts"
+    property.text = "ftp://wacos:wacos@10.20.30.60:21//opt/wacos/ftp/%s.ts" %mcode
     mappings = ET.SubElement(root_xml, "Mappings")
     mapping = ET.SubElement(mappings, "Mapping")
     mapping.set("Action", "REGIST")

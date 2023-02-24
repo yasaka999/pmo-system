@@ -63,7 +63,7 @@ file="../files/hlj_demo_all.xlsx"
 workbook=openpyxl.load_workbook(file)
 
 #选中工作簿中的表单
-sh=workbook.worksheets[1]
+sh=workbook.worksheets[0]
 
 # 读取
 # print(sh.rows,type(sh.rows))
@@ -73,7 +73,7 @@ res=list(sh.rows)
 # print(res,type(res))
 title=[i.value for i in res[0]]
 # print(title)
-program_objects=[]
+series_objects=[]
 j=0
 #遍历除第一行外的其他行
 for item in res[1:]:
@@ -82,56 +82,42 @@ for item in res[1:]:
     # 打包成字典
     case=dict(zip(title,it))
     # 添加默认字段
-    case['CODE'] = 'HLJDEMO000000'+str(30000+j)
+    case['CODE'] = 'HLJDEMO000000'+str(80000+j)
     case['LicensingWindowStart'] = '20180714130410'
     case['LicensingWindowEnd'] = '20280714130410'
     case['SearchName'] = 'hljdemo'
-    case['SeriesFlag'] = '0'
     case['ActorDisplay']= '佚名'
     case['Language'] = '中文'
     case['OriginalCountry']='中国'
-    case['Genre'] = '人文'
-    program_objects.append(case)
+    series_objects.append(case)
     j=j+1
 #print(cases)
 
-file = open("../files/hlj_program_code.txt", 'w')
-movie_object={}
+file = open("../files/hlj_series_code.txt", 'w')
 picture_object=[]
 
-for i in range(len(program_objects)):
+for i in range(len(series_objects)):
     root_xml = ET.Element("ADI")
     root_xml.set("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance")
     objects = ET.SubElement(root_xml, "Objects")
     mappings = ET.SubElement(root_xml, "Mappings")
-    p_delcolumn = ('PROGRAMID', 'CODE')
-    print (program_objects[i])
-    mcode = 'HLJDEMO000000'+str(22000+i)
-    media_fileurl = 'ftp://wacos:wacos@10.20.30.60:21//opt/wacos/ftp/%s.mp4' %mcode
-    object_deal('Program', program_objects[i], p_delcolumn)
+    s_delcolumn = ('SERIESID', 'CODE')
+    print (series_objects[i])
+    object_deal('Series', series_objects[i], s_delcolumn)
 
-    movie_object = {'CODE':mcode,'MAPPINGCODE':program_objects[i]['CODE'],'Name':program_objects[i]['Name'],'FileURL':media_fileurl}
-    print (movie_object)
-    m_delcolumn = ('CODE','MAPPINGCODE')
-    object_deal('Movie', movie_object, m_delcolumn)
-    mapping_deal('Program','Movie', movie_object)
-
-    pic1code = 'HLJDEMO000000'+str(62000+2*i)
-    pic2code = 'HLJDEMO000000'+str(62000+2*i+1)
+    pic1code = 'HLJDEMO000000'+str(60000+2*i)
+    pic2code = 'HLJDEMO000000'+str(60000+2*i+1)
     pic_fileurl = 'ftp://wacos:wacos@10.20.30.60:21//opt/wacos/CTMSData/picture/6668/1672972776668.png'
-    picture_object = [{'CODE':pic1code,'MAPPINGCODE':program_objects[i]['CODE'],'FileURL':pic_fileurl,'TYPE':'0','SEQUENCE':'1'},\
-        {'CODE':pic2code,'MAPPINGCODE':program_objects[i]['CODE'],'FileURL':pic_fileurl,'TYPE':'1','SEQUENCE':'2'}]
+    picture_object = [{'CODE':pic1code,'MAPPINGCODE':series_objects[i]['CODE'],'FileURL':pic_fileurl,'TYPE':'0','SEQUENCE':'1'},\
+        {'CODE':pic2code,'MAPPINGCODE':series_objects[i]['CODE'],'FileURL':pic_fileurl,'TYPE':'1','SEQUENCE':'2'}]
     pic_delcolumn = ('CODE', 'SEQUENCE', 'TYPE', 'MAPPINGCODE')
     for k in picture_object:
         object_deal('Picture', k, pic_delcolumn)
-        mapping_deal('Picture','Program', k)
-    
-
-#    code = 'HLJDEMO000000'+str(30000+i)
-    
-    print (program_objects[i]['CODE'],program_objects[i]['Name'],sep ='|',file=file)
+        mapping_deal('Picture','Series', k)
+   
+    print (series_objects[i]['CODE'],series_objects[i]['Name'],sep ='|',file=file)
 #    object_deal('Program', cases[i],code,mcode)
     tree = ET.ElementTree(root_xml)
-    saveXML(root_xml, "../files/program/hlj_program_%s.xml" %program_objects[i]['CODE'])
+    saveXML(root_xml, "../files/series/hlj_series_%s.xml" %series_objects[i]['CODE'])
 
 file.close()

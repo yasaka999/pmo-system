@@ -88,7 +88,7 @@ def saveXML(root, filename, indent="\t", newl="\n", encoding="utf-8"):
 
 
 # picture文件的ftp目录
-ftp_dir = 'ftp://wacos:wacos@172.25.130.5//opt/wenke/expxml_program/data/picture/'
+#ftp_dir = 'ftp://wacos:wacos@172.25.130.5//opt/wenke/expxml_program/data/picture/'
 # xml文件中的所有字段要在这里完全一致
 object_map = ['FileURL', 'Name', 'OriginalName', 'SortName', 'SearchName', 'Director', 'Kpeople', 'Description', 'Price',\
      'ReleaseYear', 'SeriesType', 'CopyRight', 'ContentProvider', 'VSPCode', 'VolumCount', 'ScriptWriter', 'Compere',\

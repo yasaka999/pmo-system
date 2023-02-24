@@ -33,6 +33,24 @@ def object_deal(name, code,mcode,scode):
     property = ET.SubElement(object, "Property")
     property.set("Name", "SearchName")
     property.text = "hljdemo"
+    property = ET.SubElement(object, "Property")
+    property.set("Name", "ActorDisplay")
+    property.text = "佚名"
+    property = ET.SubElement(object, "Property")
+    property.set("Name", "Language")
+    property.text = "中文"
+    property = ET.SubElement(object, "Property")
+    property.set("Name", "Genre")
+    property.text = "人文"
+    property = ET.SubElement(object, "Property")
+    property.set("Name", "OriginalCountry")
+    property.text = "中国"
+    property = ET.SubElement(object, "Property")
+    property.set("Name", "ReleaseYear")
+    property.text = "2022"
+    property = ET.SubElement(object, "Property")
+    property.set("Name", "Description")
+    property.text = "无"
 
     object = ET.SubElement(objects, "Object")
     object.set("Action", "REGIST")
@@ -44,7 +62,7 @@ def object_deal(name, code,mcode,scode):
     property.text = name
     property = ET.SubElement(object, "Property")
     property.set("Name", "FileURL")
-    property.text = "ftp://staimspftp:staimspftp@172.25.127.6/media/20180714/734.ts"
+    property.text = "ftp://wacos:wacos@10.20.30.60:21//opt/wacos/ftp/%s.mp4" %code
     mappings = ET.SubElement(root_xml, "Mappings")
     mapping = ET.SubElement(mappings, "Mapping")
     mapping.set("Action", "REGIST")
@@ -87,7 +105,7 @@ if __name__ == '__main__':
         mcode = 'HLJDEMO000000'+str(20000+i)
         print (code,name,sep='|',file=file)
         root = object_deal(name, code, mcode,scode)
-        saveXML(root, '../files/hlj_series_program_%s.xml '%code)
+        saveXML(root, '../files/sigleprogram/hlj_sigle_program_%s.xml '%code)
 #    code_list = ('123456', '测试节目2')
 #    root_xml= object_deal('Program', code_list)
 #    saveXML(root_xml, '../files/delProgram_%s.xml' %code_list[0])
