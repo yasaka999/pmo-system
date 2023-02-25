@@ -1,0 +1,103 @@
+{
+  "userName": "default",
+  "taskId": "pbyk32sxjybak4swz1p",
+  "source": "http://172.16.20.128:8086/webupload/ad_brand___ygtkwy27yg.mp4?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20230221T091913Z&X-Amz-SignedHeaders=host&X-Amz-Expires=604800&X-Amz-Credential=NISF3K9CZDFC677ANX58%2F20230221%2Fcn-north-1%2Fs3%2Faws4_request&X-Amz-Signature=4f14a2815358cf678618d15504b26d34f6cdb7e80dfee6b55d65f16d44f1123e",
+  "description": "",
+  "preset": "default",
+  "status": "SUCCESS",
+  "label": "REJECT",
+  "duration": 14,
+  "notification": "",
+  "results": [
+    {
+      "type": "ad_brand",
+      "items": [
+        {
+          "subType": "brand",
+          "target": "thumbnail",
+          "timeInSeconds": 0,
+          "startTimeInSeconds": 0,
+          "endTimeInSeconds": 15,
+          "confidence": 99.46,
+          "label": "REJECT",
+          "extra": "湖南卫视",
+          "evidence": {
+            "thumbnail": "http://172.16.20.128:8086/videoai/563c3dd19a7e7c7d24a377a87d8aee73/pbyk32sxjybak4swz1p/thumbnails/00000.jpg",
+            "location": {
+              "leftOffsetInPixel": 49,
+              "topOffsetInPixel": 29,
+              "widthInPixel": 67,
+              "heightInPixel": 53
+            }
+          }
+        },
+        {
+          "subType": "brand",
+          "target": "thumbnail",
+          "timeInSeconds": 7,
+          "startTimeInSeconds": 7,
+          "endTimeInSeconds": 8,
+          "confidence": 91.91,
+          "label": "REVIEW",
+          "extra": "百事可乐",
+          "evidence": {
+            "thumbnail": "http://172.16.20.128:8086/videoai/563c3dd19a7e7c7d24a377a87d8aee73/pbyk32sxjybak4swz1p/thumbnails/00007.jpg",
+            "location": {
+              "leftOffsetInPixel": 303,
+              "topOffsetInPixel": 359,
+              "widthInPixel": 208,
+              "heightInPixel": 60
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "ad_marketing",
+      "items": [
+        {
+          "subType": "commercial",
+          "target": "character",
+          "timeInSeconds": 0,
+          "startTimeInSeconds": 0,
+          "endTimeInSeconds": 1,
+          "confidence": 100.0,
+          "label": "REJECT",
+          "evidence": {
+            "thumbnail": "http://172.16.20.128:8086/videoai/563c3dd19a7e7c7d24a377a87d8aee73/pbyk32sxjybak4swz1p/thumbnails/00000.jpg",
+            "location": {
+              "leftOffsetInPixel": 590,
+              "topOffsetInPixel": 470,
+              "widthInPixel": 307,
+              "heightInPixel": 41
+            },
+            "text": "思美人和氏璧风 adzop.com"
+          }
+        },
+        {
+          "subType": "watermark",
+          "target": "thumbnail",
+          "timeInSeconds": 7,
+          "startTimeInSeconds": 7,
+          "endTimeInSeconds": 13,
+          "confidence": 90.45,
+          "label": "REVIEW",
+          "evidence": {
+            "thumbnail": "http://172.16.20.128:8086/videoai/563c3dd19a7e7c7d24a377a87d8aee73/pbyk32sxjybak4swz1p/thumbnails/00007.jpg",
+            "location": {
+              "leftOffsetInPixel": 581,
+              "topOffsetInPixel": 345,
+              "widthInPixel": 321,
+              "heightInPixel": 167
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "createTime": "2023-02-23T02:41:36Z",
+  "startTime": "2023-02-23T02:41:36Z",
+  "finishTime": "2023-02-23T02:42:06Z",
+  "streamId": "",
+  "callbackType": "vcr"
+}

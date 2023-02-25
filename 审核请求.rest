@@ -1,0 +1,5 @@
+##
+GET http://172.16.20.128:8100/v2/vcr/media?taskId=pbyk32sxjybak4swz1p
+##
+
+GET http://172.16.20.128:8100/v1/vcr/task/historicalTasks?source=http://172.16.20.128:8086/webupload/ad_brand___ygtkwy27yg.mp4
