@@ -4,11 +4,9 @@ import json
 
 url = "http://172.16.20.128:8100/v2/vcr/media"
 
-querystring = {"taskId": "pbyk2ebag5eru7hgvph"}
+querystring = {"taskId": "pcckdy3t1grh5nxxd62"}
 
-headers = {"user-agent": "vscode-restclient"}
-
-response = requests.request("GET", url, headers=headers, params=querystring)
+response = requests.request("GET", url, params=querystring)
 
 messages = json.loads(response.text)
 
@@ -60,7 +58,7 @@ try:
                     item["confidence"],
                     item.get("extra", ""),
                     item["target"],
-                    item.get("timeInSeconds",0),
+                    item.get("timeInSeconds", 0),
                     item["startTimeInSeconds"],
                     item["endTimeInSeconds"],
                 ),

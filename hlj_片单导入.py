@@ -58,9 +58,12 @@ def saveXML(root, filename, indent="\t", newl="\n", encoding="utf-8"):
     with codecs.open(filename, "w", encoding="utf-8") as f:
         dom.writexml(f, "", indent, newl, encoding)
 
+# 导入文件与输出目录定义
+input_excel = "../files/黑龙江导入模板.xls"
+output_dir = "../files/xml/"
 
 # 打开 Excel 文件
-workbook = xlrd.open_workbook("../files/黑龙江导入模板.xls")
+workbook = xlrd.open_workbook(input_excel)
 # 获取第一个工作表
 worksheet = workbook.sheet_by_index(0)
 # 获取字段名称
@@ -106,16 +109,6 @@ for d in single_program_objects:
     seriesdtl["SEQUENCE"] = d["Sequence"]
     seriesdtl_objects.append(seriesdtl)
 
-# 记录下这批生成的数据
-file = open("../files/hlj_test.txt", "w")
-for i in series_objects:
-    print(i["CODE"], i["Name"], sep="|", file=file)
-for i in single_program_objects:
-    print(i["CODE"], i["Name"], sep="|", file=file)
-for i in program_objects:
-    print(i["CODE"], i["Name"], sep="|", file=file)
-file.close()
-
 # 生成series的xml
 print("开始生成xml")
 for i in range(len(series_objects)):
@@ -126,7 +119,7 @@ for i in range(len(series_objects)):
     s_delcolumn = ("Sequence", "CODE", "ProgramCode", "SeriesCode")
     object_deal("Series", series_objects[i], s_delcolumn)
     tree = ET.ElementTree(root_xml)
-    saveXML(root_xml, "../files/sx_series_%s.xml" % series_objects[i]["CODE"])
+    saveXML(root_xml, output_dir+"hljhjj_series_%s.xml" % series_objects[i]["CODE"])
 
 # 生成single_program的xml
 for i in range(len(single_program_objects)):
@@ -144,7 +137,7 @@ for i in range(len(single_program_objects)):
     tree = ET.ElementTree(root_xml)
     saveXML(
         root_xml,
-        "../files/sx_single_program_%s.xml" % single_program_objects[i]["CODE"],
+        output_dir+"hlj_single_program_%s.xml" % single_program_objects[i]["CODE"],
     )
 
 # 生成program的xml
@@ -156,5 +149,20 @@ for i in range(len(program_objects)):
     p_delcolumn = ("VolumnCount", "CODE", "Sequence", "SeriesCode", "ProgramCode")
     object_deal("Program", program_objects[i], p_delcolumn)
     tree = ET.ElementTree(root_xml)
-    saveXML(root_xml, "../files/sx_program_%s.xml" % program_objects[i]["CODE"])
-print("工单生成完毕")
+    saveXML(root_xml, output_dir+"hlj_program_%s.xml" % program_objects[i]["CODE"])
+print("工单生成完毕,输出目录%s" % output_dir)
+
+
+'''
+# 记录下这批生成的数据
+file = open(output_dir+"hlj_record.txt", "w")
+for i in series_objects:
+    print(i["CODE"], i["Name"], sep="|", file=file)
+for i in single_program_objects:
+    print(i["CODE"], i["Name"], sep="|", file=file)
+for i in program_objects:
+    print(i["CODE"], i["Name"], sep="|", file=file)
+file.close()
+print("生成记录文件:hlj_record.txt")
+
+'''

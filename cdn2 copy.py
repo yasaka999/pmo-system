@@ -83,32 +83,48 @@ listen_socket.bind((HOST, PORT))
 listen_socket.listen(5)
 print("Serving HTTP on port %s ..." % PORT)
 
+client_list = []
 while True:
     client_connection, client_address = listen_socket.accept()
-# 有时读取到的数据不完整，这地方等一下看着没问题了
-    time.sleep(0.1)
-    request = client_connection.recv(1024)
-    print("%s: Receive new soap request: " % time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
-    if "CSPID" in request.decode("utf-8"):
-#       print (request)
-        cspid = substr('CSPID',request.decode("utf-8"))
-        lspid = substr('LSPID',request.decode("utf-8")) 
-        correlateid = substr('CorrelateID',request.decode("utf-8"))
-        fileurl = substr('CmdFileURL',request.decode("utf-8"))
-        xmlfile = fileurl.split("/")[-1] 
-    else:
-        print ("something wrong !aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
-    print("CSPID: %s, LSPID: %s" %(cspid,lspid))
-    print("CorrelateID: %s" %correlateid)
-    print("FileUrl: %s" %fileurl)
-#    time.sleep(1.5)
-    try:
-        client_connection.sendall(response(soap_response).encode("utf-8"))
-    except:
-        print ("send response err")
+    client_list.append((client_connection, client_address))
+    print("Connected by", client_address)
 
-#    print(soap_response.encode("utf-8"))
-    client_connection.close()
+    while True:
+        try:
+            # Read request from client
+            request = client_connection.recv(1024)
+            if not request:
+                client_connection.close()
+                client_list.remove((client_connection, client_address))
+                break
+            print("%s: Receive new soap request: " % time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
+
+            # Process request here
+            if "CSPID" in request.decode("utf-8"):
+#       print (request)
+                cspid = substr('CSPID',request.decode("utf-8"))
+                lspid = substr('LSPID',request.decode("utf-8")) 
+                correlateid = substr('CorrelateID',request.decode("utf-8"))
+                fileurl = substr('CmdFileURL',request.decode("utf-8"))
+                xmlfile = fileurl.split("/")[-1] 
+            else:
+                print ("something wrong !aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+                print("CSPID: %s, LSPID: %s" %(cspid,lspid))
+                print("CorrelateID: %s" %correlateid)
+                print("FileUrl: %s" %fileurl)
+#    time.sleep(1.5)
+            try:
+                client_connection.sendall(response(soap_response).encode("utf-8"))
+            except:
+                print ("send response err")
+
+        except Exception as e:
+            print(e)
+            client_connection.close()
+            client_list.remove((client_connection, client_address))
+            break
+
+
 
 # 下载xml文件并解析
     try:

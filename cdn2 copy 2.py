@@ -74,7 +74,6 @@ soap_resultnotify= '<?xml version="1.0" encoding="utf-8"?><SOAP-ENV:Envelope xml
             <LSPID>lspid</LSPID><CorrelateID>correlateid</CorrelateID><CmdResult>0</CmdResult><ResultFileURL>ftp</ResultFileURL>\
                 </impl:ResultNotify></SOAP-ENV:Body></SOAP-ENV:Envelope>'
 
-
 HOST, PORT = "", 8510
 
 listen_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -85,12 +84,30 @@ print("Serving HTTP on port %s ..." % PORT)
 
 while True:
     client_connection, client_address = listen_socket.accept()
-# 有时读取到的数据不完整，这地方等一下看着没问题了
-    time.sleep(0.1)
-    request = client_connection.recv(1024)
     print("%s: Receive new soap request: " % time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
+
+    request = b""
+    while True:
+        data = client_connection.recv(1024)
+        if not data:
+            break
+        request += data
+        if b"\r\n\r\n" in request:
+            # we received the complete HTTP header
+            # extract Content-Length value from header
+            headers, body = request.split(b"\r\n\r\n", 1)
+            header_lines = headers.decode("utf-8").split("\r\n")
+            content_length = 0
+            for line in header_lines:
+                if line.lower().startswith("content-length:"):
+                    content_length = int(line.split(":")[1].strip())
+                    break
+            if len(body) >= content_length:
+                # we received the complete message
+                request = headers + b"\r\n\r\n" + body[:content_length]
+                break
+
     if "CSPID" in request.decode("utf-8"):
-#       print (request)
         cspid = substr('CSPID',request.decode("utf-8"))
         lspid = substr('LSPID',request.decode("utf-8")) 
         correlateid = substr('CorrelateID',request.decode("utf-8"))
@@ -98,17 +115,21 @@ while True:
         xmlfile = fileurl.split("/")[-1] 
     else:
         print ("something wrong !aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+
     print("CSPID: %s, LSPID: %s" %(cspid,lspid))
     print("CorrelateID: %s" %correlateid)
     print("FileUrl: %s" %fileurl)
-#    time.sleep(1.5)
+
     try:
         client_connection.sendall(response(soap_response).encode("utf-8"))
     except:
         print ("send response err")
 
-#    print(soap_response.encode("utf-8"))
-    client_connection.close()
+    if "Connection: close" in request.decode("utf-8"):
+        client_connection.close()
+    else:
+        # keep the connection alive
+        pass
 
 # 下载xml文件并解析
     try:

@@ -11,6 +11,7 @@ import ConfigParser
 #sys.setdefaultencoding('utf8')
 def DupSchedule (sChannel,dChannel):
     airdate=(datetime.datetime.today()+datetime.timedelta(days=1)).strftime("%Y%m%d")
+    airdate=(datetime.datetime.today()).strftime("%Y%m%d")
     f.write("Channel:"+dChannel+"\n")
     f.write("Date:"+str(airdate)+"\n")
     db=cx_Oracle.connect(databaseuser,databasepassword,database)

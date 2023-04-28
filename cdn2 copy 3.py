@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # coding=utf-8
+import select
 import time
 import socket
 import sys
@@ -74,59 +75,90 @@ soap_resultnotify= '<?xml version="1.0" encoding="utf-8"?><SOAP-ENV:Envelope xml
             <LSPID>lspid</LSPID><CorrelateID>correlateid</CorrelateID><CmdResult>0</CmdResult><ResultFileURL>ftp</ResultFileURL>\
                 </impl:ResultNotify></SOAP-ENV:Body></SOAP-ENV:Envelope>'
 
-
 HOST, PORT = "", 8510
 
-listen_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-listen_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-listen_socket.bind((HOST, PORT))
-listen_socket.listen(5)
-print("Serving HTTP on port %s ..." % PORT)
+# 建立一个套接字
+server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server_socket.bind((HOST, PORT))
+server_socket.listen(5)
+
+# 将套接字设置为非阻塞模式
+server_socket.setblocking(False)
+
+# 创建一个select对象
+select_obj = select.poll()
+
+# 将server_socket加入到select对象中
+select_obj.register(server_socket.fileno(), select.POLLIN)
 
 while True:
-    client_connection, client_address = listen_socket.accept()
-# 有时读取到的数据不完整，这地方等一下看着没问题了
-    time.sleep(0.1)
-    request = client_connection.recv(1024)
-    print("%s: Receive new soap request: " % time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
-    if "CSPID" in request.decode("utf-8"):
-#       print (request)
-        cspid = substr('CSPID',request.decode("utf-8"))
-        lspid = substr('LSPID',request.decode("utf-8")) 
-        correlateid = substr('CorrelateID',request.decode("utf-8"))
-        fileurl = substr('CmdFileURL',request.decode("utf-8"))
-        xmlfile = fileurl.split("/")[-1] 
-    else:
-        print ("something wrong !aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
-    print("CSPID: %s, LSPID: %s" %(cspid,lspid))
-    print("CorrelateID: %s" %correlateid)
-    print("FileUrl: %s" %fileurl)
-#    time.sleep(1.5)
-    try:
-        client_connection.sendall(response(soap_response).encode("utf-8"))
-    except:
-        print ("send response err")
+    # 监听读取和写入事件
+    events = select_obj.poll()
 
-#    print(soap_response.encode("utf-8"))
-    client_connection.close()
+    # 处理所有可读事件
+    for fd, event in events:
+        # 如果可读事件是server_socket，则处理新连接
+        if fd == server_socket.fileno():
+            client_socket, _ = server_socket.accept()
+            # 将client_socket设置为非阻塞模式，并加入select对象中
+            client_socket.setblocking(False)
+            select_obj.register(client_socket.fileno(), select.POLLIN)
+        # 如果可读事件是client_socket，则接收客户端数据
+        else:
+            sock_obj = socket.fromfd(fd, socket.AF_INET, socket.SOCK_STREAM)
+            request = sock_obj.recv(1024)
+            if request:
+                # 处理接收到的数据
+                # 处理接收到的数据
+                print("%s: Receive new soap request: " % time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
+                if "CSPID" in request.decode("utf-8"):
+            #       print (request)
+                    cspid = substr('CSPID',request.decode("utf-8"))
+                    lspid = substr('LSPID',request.decode("utf-8")) 
+                    correlateid = substr('CorrelateID',request.decode("utf-8"))
+                    fileurl = substr('CmdFileURL',request.decode("utf-8"))
+                    xmlfile = fileurl.split("/")[-1] 
+                else:
+                    print ("something wrong !aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+                print("CSPID: %s, LSPID: %s" %(cspid,lspid))
+                print("CorrelateID: %s" %correlateid)
+                print("FileUrl: %s" %fileurl)
+            #    time.sleep(1.5)
+                try:
+                    client_connection.sendall(response(soap_response).encode("utf-8"))
+                except:
+                    print ("send response err")
 
-# 下载xml文件并解析
-    try:
-        subprocess.call('wget -O %s %s' %(xmlfile,fileurl),shell=True)
-        # 解析xml文件
-        list1 = xml_parser(xmlfile)
-        for i in list1:
-            print (i)
-    except:
-        print ("download xml error")
+            #    print(soap_response.encode("utf-8"))
+                client_connection.close()
 
-# 发送resultNotify
-    url = "http://172.18.106.5:8002/scms-output-dispatcher/services/ctms_smg"
-    ftp = "ftp://scms:Sxiptv_2022@172.18.106.14:21/result.xml"
-    data = soap_resultnotify.replace("cspid",cspid).replace("lspid",lspid).replace("correlateid",correlateid).replace("ftp",ftp)
-#    print(data)
-    time.sleep(1)
-    doPost(url, data)
+            # 下载xml文件并解析
+                try:
+                    subprocess.call('wget -O %s %s' %(xmlfile,fileurl),shell=True)
+                    # 解析xml文件
+                    list1 = xml_parser(xmlfile)
+                    for i in list1:
+                        print (i)
+                except:
+                    print ("download xml error")
+
+            # 发送resultNotify
+                url = "http://172.18.106.5:8002/scms-output-dispatcher/services/ctms_smg"
+                ftp = "ftp://scms:Sxiptv_2022@172.18.106.14:21/result.xml"
+                data = soap_resultnotify.replace("cspid",cspid).replace("lspid",lspid).replace("correlateid",correlateid).replace("ftp",ftp)
+            #    print(data)
+                time.sleep(1)
+                doPost(url, data)
+
+
+                pass
+            else:
+                # 如果客户端关闭连接，则将socket从select对象中移除
+                select_obj.unregister(fd)
+                sock_obj.close()
+
+
+
 """
 功能：可模拟下游接收节点，应答soap消息，下载xml文件，解析打印内容，并回复处理结果的resultNotify.
 需要修改的配置：不同的端口修改PORT值（默认8510），回调地址修改url, ftp地址也需要按实际修改，确认可被下载。
@@ -135,3 +167,6 @@ result.xml的内容如下：
 <?xml version="1.0" encoding="UTF-8"?><xsi:ADI xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><Reply><Property Name="Result">0</Property><Property Name
 ="Description">Success</Property></Reply></xsi:ADI>
 """
+
+
+
