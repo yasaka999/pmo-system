@@ -17,17 +17,27 @@ def deal_json(jsonfile):
     for schedule in data['schedules']:
         print ('原始：',schedule['title'])
         schedule['title'] = replace_roman_numerals(re.sub(r'\([^)]*[：]([^)]*)\)', '', schedule['title']))
+        
+        # 如果是5个汉字加()，且括号内为中文，则去掉括号;比如"骑劫地下铁(上)"转成"骑劫地下铁上"
+        pattern = r'^([\u4e00-\u9fa5]{5})\(([\u4e00-\u9fa5]+)\)$'  # 匹配规则的正则表达式模式
+        schedule['title'] = re.sub(pattern, r'\1\2', schedule['title'])
+
         title_bytes = schedule['title'].encode('utf-8')
         if len(title_bytes) > 18:
             schedule['title'] = title_bytes[:18].decode('utf-8', errors='ignore')
         else:
             schedule['title'] = title_bytes.decode('utf-8', errors='ignore')
-        
-        # 如果结果是"新燕子李三(25"这种，转换成“"新燕子李三25"
-        pattern = r"[\u4e00-\u9fa5]{5}\([0-9]"
-        match = re.match(pattern, schedule['title'])
-        if match:
-            schedule['title'] = schedule['title'].replace("(", "")    
+        print ('截取后：',schedule['title'])
+        # 如果结果是"新燕子李三(25"这种，转换成“"新燕子李三25";海底小纵队6(2，转换成海底小纵队6-2
+        pattern1 = r"[\u4e00-\u9fa5]{5}\([0-9]"
+        pattern2 = r"[\u4e00-\u9fa5]{5}[0-9]\("
+        match1 = re.match(pattern1, schedule['title'])
+        match2 = re.match(pattern2, schedule['title'])
+
+        if match1:
+            schedule['title'] = schedule['title'].replace("(", "").replace(")", "") 
+        if match2:
+            schedule['title'] = schedule['title'].replace("(", "-")               
         print ('修改：',schedule['title'])
 
     with open(jsonfile, 'w', encoding='utf-8') as f:
