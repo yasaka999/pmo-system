@@ -26,9 +26,9 @@ def xml_parser(filename):
 
 if __name__ == '__main__':
     list1 = xml_parser(sys.argv[1])
-    # print (list1)
+#    print (list1)
     list2 = xml_parser(sys.argv[2])
-    # print (list2)
+#    print (list2)
     diff = set(list1).symmetric_difference(set(list2))
     diff = sorted(list(diff))
     if not diff:

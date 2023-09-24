@@ -1,8 +1,8 @@
 # 从csv中读取生成删除的对象
-from asyncore import read
 from xml.etree import ElementTree as ET
 from xml.dom import minidom
 import csv
+import chardet
 
 # object中的字段对象生成
 def object_deal(type, code):
@@ -24,12 +24,17 @@ def object_deal(type, code):
 def saveXML(root, filename, indent="\t", newl="\n", encoding="utf-8"):
     rawText = ET.tostring(root)
     dom = minidom.parseString(rawText)
-    with open(filename, 'w') as f:
+    with open(filename, 'w',encoding="utf-8") as f:
         dom.writexml(f, "", indent, newl, encoding)
 
 if __name__ == '__main__':
-    with open ('../files/hlj_program.csv' ,mode='r',encoding='utf-8') as f:
-        reader= csv.reader(f)
+    with open('../files/hlj_program.csv', mode='rb') as f:
+        # 检测文件编码
+        result = chardet.detect(f.read())
+        encoding = result['encoding']
+    
+    with open('../files/hlj_program.csv', mode='r', encoding=encoding) as f:
+        reader = csv.reader(f)
         for row in reader:
             print(row)
             root = object_deal('Program', row)
