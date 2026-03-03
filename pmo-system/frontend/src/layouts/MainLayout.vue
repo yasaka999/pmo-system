@@ -24,6 +24,10 @@
           <el-icon><FolderOpened /></el-icon>
           <template #title>项目列表</template>
         </el-menu-item>
+        <el-menu-item v-if="['admin','pmo'].includes(auth.user?.role)" index="/portfolio-report">
+          <el-icon><DataAnalysis /></el-icon>
+          <template #title>整体报告</template>
+        </el-menu-item>
 
         <template v-if="currentProjectId">
           <el-divider v-if="!collapsed" style="border-color:#2d3e58;margin:8px 0"/>
@@ -143,6 +147,10 @@
         <el-menu-item index="/projects">
           <el-icon><FolderOpened /></el-icon>
           <template #title>项目列表</template>
+        </el-menu-item>
+        <el-menu-item v-if="['admin','pmo'].includes(auth.user?.role)" index="/portfolio-report">
+          <el-icon><DataAnalysis /></el-icon>
+          <template #title>整体报告</template>
         </el-menu-item>
 
         <template v-if="currentProjectId">

@@ -18,6 +18,7 @@ const routes = [
             { path: 'projects/:id/reports', component: () => import('@/views/ReportView.vue'), meta: { title: '报告生成' } },
             { path: 'system/users', component: () => import('@/views/UserListView.vue'), meta: { title: '用户管理', adminOnly: true } },
             { path: 'system/config', component: () => import('@/views/SystemConfigView.vue'), meta: { title: '系统配置', adminOnly: true } },
+            { path: 'portfolio-report', component: () => import('@/views/PortfolioReportView.vue'), meta: { title: '整体报告' } },
         ]
     }
 ]
