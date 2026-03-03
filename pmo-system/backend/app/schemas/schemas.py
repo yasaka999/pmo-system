@@ -74,6 +74,14 @@ class ProjectBase(BaseModel):
     actual_end: Optional[date] = None
     budget_mandays: float = 0
     description: Optional[str] = None
+    contract_no: Optional[str] = None
+    region: Optional[str] = None
+    plan_delivery_date: Optional[date] = None
+    actual_delivery_date: Optional[date] = None
+    plan_initial_acceptance_date: Optional[date] = None
+    actual_initial_acceptance_date: Optional[date] = None
+    plan_final_acceptance_date: Optional[date] = None
+    actual_final_acceptance_date: Optional[date] = None
 
 class ProjectCreate(ProjectBase):
     pass
@@ -90,6 +98,14 @@ class ProjectUpdate(BaseModel):
     actual_end: Optional[date] = None
     budget_mandays: Optional[float] = None
     description: Optional[str] = None
+    contract_no: Optional[str] = None
+    region: Optional[str] = None
+    plan_delivery_date: Optional[date] = None
+    actual_delivery_date: Optional[date] = None
+    plan_initial_acceptance_date: Optional[date] = None
+    actual_initial_acceptance_date: Optional[date] = None
+    plan_final_acceptance_date: Optional[date] = None
+    actual_final_acceptance_date: Optional[date] = None
 
 class ProjectOut(ProjectBase):
     id: int

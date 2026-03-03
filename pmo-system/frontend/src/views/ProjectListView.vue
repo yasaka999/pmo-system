@@ -135,6 +135,41 @@
             <el-form-item label="计划结束"><el-date-picker v-model="form.plan_end" type="date" value-format="YYYY-MM-DD" style="width:100%" /></el-form-item>
           </el-col>
         </el-row>
+        <el-row :gutter="16">
+          <el-col :span="12">
+            <el-form-item label="合同编号"><el-input v-model="form.contract_no" /></el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="区域"><el-input v-model="form.region" placeholder="如：华东区" /></el-form-item>
+          </el-col>
+        </el-row>
+        <!-- 交付日期 -->
+        <el-row :gutter="16">
+          <el-col :span="12">
+            <el-form-item label="计划交付"><el-date-picker v-model="form.plan_delivery_date" type="date" value-format="YYYY-MM-DD" style="width:100%" /></el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="实际交付"><el-date-picker v-model="form.actual_delivery_date" type="date" value-format="YYYY-MM-DD" style="width:100%" /></el-form-item>
+          </el-col>
+        </el-row>
+        <!-- 初验日期 -->
+        <el-row :gutter="16">
+          <el-col :span="12">
+            <el-form-item label="计划初验"><el-date-picker v-model="form.plan_initial_acceptance_date" type="date" value-format="YYYY-MM-DD" style="width:100%" /></el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="实际初验"><el-date-picker v-model="form.actual_initial_acceptance_date" type="date" value-format="YYYY-MM-DD" style="width:100%" /></el-form-item>
+          </el-col>
+        </el-row>
+        <!-- 终验日期 -->
+        <el-row :gutter="16">
+          <el-col :span="12">
+            <el-form-item label="计划终验"><el-date-picker v-model="form.plan_final_acceptance_date" type="date" value-format="YYYY-MM-DD" style="width:100%" /></el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="实际终验"><el-date-picker v-model="form.actual_final_acceptance_date" type="date" value-format="YYYY-MM-DD" style="width:100%" /></el-form-item>
+          </el-col>
+        </el-row>
         <el-form-item label="项目描述"><el-input type="textarea" v-model="form.description" :rows="3" /></el-form-item>
       </el-form>
       <template #footer>
@@ -171,7 +206,11 @@ const phaseOptions = computed(() => dictStore.getOptions('project_phase'))
 
 const defaultForm = () => ({
   code: '', name: '', client: '', manager: '', phase: '实施',
-  status: '正常', plan_start: null, plan_end: null, budget_mandays: 0, description: ''
+  status: '正常', plan_start: null, plan_end: null, budget_mandays: 0, description: '',
+  contract_no: '', region: '',
+  plan_delivery_date: null, actual_delivery_date: null,
+  plan_initial_acceptance_date: null, actual_initial_acceptance_date: null,
+  plan_final_acceptance_date: null, actual_final_acceptance_date: null,
 })
 const form = ref(defaultForm())
 
