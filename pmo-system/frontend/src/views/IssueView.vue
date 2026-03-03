@@ -1,30 +1,30 @@
 <template>
   <div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <div class="page-header">
       <h2 class="page-title">问题台账</h2>
-      <div>
-        <el-button @click="downloadIssueRisk" :loading="downloading"><el-icon><Download /></el-icon> 导出Excel</el-button>
+      <div style="display:flex;gap:8px;flex-shrink:0">
+        <el-button @click="downloadIssueRisk" :loading="downloading" class="hide-mobile">
+          <el-icon><Download /></el-icon> 导出Excel
+        </el-button>
         <el-button type="primary" @click="openDialog()"><el-icon><Plus /></el-icon> 新建问题</el-button>
       </div>
     </div>
 
-    <div class="page-card" style="padding:12px 20px;margin-bottom:12px">
-      <el-row :gutter="12">
-        <el-col :span="4">
-          <el-select v-model="filterStatus" placeholder="状态" clearable @change="load">
-            <el-option v-for="s in statusOptions" :key="s.value" :label="s.label" :value="s.value" />
-          </el-select>
-        </el-col>
-        <el-col :span="4">
-          <el-select v-model="filterSeverity" placeholder="严重等级" clearable @change="load">
-            <el-option v-for="s in severityOptions" :key="s.value" :label="s.label" :value="s.value" />
-          </el-select>
-        </el-col>
-      </el-row>
+    <!-- 筛选 -->
+    <div class="page-card" style="padding:10px 16px;margin-bottom:12px">
+      <div class="filter-row">
+        <el-select v-model="filterStatus" placeholder="状态" clearable @change="load" style="flex:1;min-width:120px">
+          <el-option v-for="s in statusOptions" :key="s.value" :label="s.label" :value="s.value" />
+        </el-select>
+        <el-select v-model="filterSeverity" placeholder="严重等级" clearable @change="load" style="flex:1;min-width:120px">
+          <el-option v-for="s in severityOptions" :key="s.value" :label="s.label" :value="s.value" />
+        </el-select>
+      </div>
     </div>
 
-    <div class="page-card">
-      <el-table :data="issues" stripe border v-loading="loading">
+    <!-- PC 表格 -->
+    <div class="page-card hide-mobile">
+      <el-table :data="issues" stripe border v-loading="loading" style="width:100%">
         <el-table-column prop="title" label="问题" min-width="220" />
         <el-table-column prop="severity" label="等级" width="80">
           <template #default="{ row }">
@@ -53,25 +53,53 @@
       </el-table>
     </div>
 
-    <el-dialog v-model="dlg" :title="editId ? '编辑问题' : '新建问题'" width="600px">
-      <el-form :model="form" label-width="100px">
+    <!-- 手机端卡片列表 -->
+    <div class="show-mobile" v-loading="loading">
+      <div v-if="issues.length === 0 && !loading" style="text-align:center;padding:40px;color:#aaa;">暂无数据</div>
+      <div class="mobile-card-list">
+        <div class="m-card" v-for="row in issues" :key="row.id">
+          <div class="m-card-header">
+            <div class="m-card-title">{{ row.title }}</div>
+            <el-tag :type="sevType(row.severity)" size="small">{{ dictLabel('issue_severity', row.severity) }}</el-tag>
+          </div>
+          <div class="m-card-body">
+            <div class="m-field"><span class="m-field-label">状态</span>
+              <el-tag :type="statusType(row.status)" size="small">{{ dictLabel('issue_status', row.status) }}</el-tag>
+            </div>
+            <div class="m-field"><span class="m-field-label">负责人</span><span class="m-field-value">{{ row.assignee || '-' }}</span></div>
+            <div class="m-field"><span class="m-field-label">来源</span><span class="m-field-value">{{ dictLabel('issue_source', row.source) }}</span></div>
+            <div class="m-field"><span class="m-field-label">截止日期</span><span class="m-field-value">{{ row.due_date || '-' }}</span></div>
+          </div>
+          <div class="m-card-footer">
+            <el-button size="small" type="warning" @click="openDialog(row)">编辑</el-button>
+            <el-popconfirm title="确认删除？" @confirm="remove(row.id)">
+              <template #reference><el-button size="small" type="danger">删除</el-button></template>
+            </el-popconfirm>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 对话框 -->
+    <el-dialog v-model="dlg" :title="editId ? '编辑问题' : '新建问题'" width="min(600px, 95vw)">
+      <el-form :model="form" label-width="90px">
         <el-form-item label="问题标题"><el-input v-model="form.title" /></el-form-item>
         <el-row :gutter="12">
-          <el-col :span="8">
+          <el-col :xs="24" :sm="8">
             <el-form-item label="严重等级">
               <el-select v-model="form.severity" style="width:100%">
                 <el-option v-for="s in severityOptions" :key="s.value" :label="s.label" :value="s.value" />
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="8">
+          <el-col :xs="24" :sm="8">
             <el-form-item label="来源">
               <el-select v-model="form.source" style="width:100%">
                 <el-option v-for="s in sourceOptions" :key="s.value" :label="s.label" :value="s.value" />
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="8">
+          <el-col :xs="24" :sm="8">
             <el-form-item label="状态">
               <el-select v-model="form.status" style="width:100%">
                 <el-option v-for="s in statusOptions" :key="s.value" :label="s.label" :value="s.value" />
@@ -80,11 +108,11 @@
           </el-col>
         </el-row>
         <el-row :gutter="12">
-          <el-col :span="8"><el-form-item label="负责人"><el-input v-model="form.assignee" /></el-form-item></el-col>
-          <el-col :span="8"><el-form-item label="提出日期"><el-date-picker v-model="form.raised_date" type="date" value-format="YYYY-MM-DD" style="width:100%" /></el-form-item></el-col>
-          <el-col :span="8"><el-form-item label="期望解决"><el-date-picker v-model="form.due_date" type="date" value-format="YYYY-MM-DD" style="width:100%" /></el-form-item></el-col>
+          <el-col :xs="24" :sm="8"><el-form-item label="负责人"><el-input v-model="form.assignee" /></el-form-item></el-col>
+          <el-col :xs="24" :sm="8"><el-form-item label="提出日期"><el-date-picker v-model="form.raised_date" type="date" value-format="YYYY-MM-DD" style="width:100%" /></el-form-item></el-col>
+          <el-col :xs="24" :sm="8"><el-form-item label="期望解决"><el-date-picker v-model="form.due_date" type="date" value-format="YYYY-MM-DD" style="width:100%" /></el-form-item></el-col>
         </el-row>
-        <el-form-item label="实际解决"><el-date-picker v-model="form.resolved_date" type="date" value-format="YYYY-MM-DD" style="width:200px" /></el-form-item>
+        <el-form-item label="实际解决"><el-date-picker v-model="form.resolved_date" type="date" value-format="YYYY-MM-DD" style="width:160px" /></el-form-item>
         <el-form-item label="问题描述"><el-input v-model="form.description" type="textarea" :rows="2" /></el-form-item>
         <el-form-item label="解决措施"><el-input v-model="form.resolution" type="textarea" :rows="2" /></el-form-item>
       </el-form>
@@ -152,10 +180,7 @@ async function downloadIssueRisk() {
   finally { downloading.value = false }
 }
 
-function dictLabel(cat, val) {
-  return dictStore.getDictItem(cat, val).label || val
-}
-
+function dictLabel(cat, val) { return dictStore.getDictItem(cat, val).label || val }
 function sevType(s) {
   const c = dictStore.getDictItem('issue_severity', s).color
   return c || { '高': 'danger', '中': 'warning', '低': 'success' }[s] || ''
@@ -165,11 +190,14 @@ function statusType(s) {
   return c || { '待处理': 'danger', '处理中': 'warning', '已关闭': 'success' }[s] || ''
 }
 
-onMounted(() => {
-  dictStore.fetchDicts()
-  load()
-})
+onMounted(() => { dictStore.fetchDicts(); load() })
 </script>
+
 <style scoped>
-.page-title { font-size: 20px; font-weight: 600; color: #2E4057; }
+.page-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+.filter-row { display:flex; gap:10px; flex-wrap:wrap; }
+@media (max-width: 768px) {
+  .page-header { margin-bottom: 12px; }
+  .filter-row { gap: 8px; }
+}
 </style>

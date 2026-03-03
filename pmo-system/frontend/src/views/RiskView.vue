@@ -1,11 +1,13 @@
 <template>
   <div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <div class="page-header">
       <h2 class="page-title">风险台账</h2>
       <el-button type="primary" @click="openDialog()"><el-icon><Plus /></el-icon> 新建风险</el-button>
     </div>
-    <div class="page-card">
-      <el-table :data="risks" stripe border v-loading="loading">
+
+    <!-- PC 表格 -->
+    <div class="page-card hide-mobile">
+      <el-table :data="risks" stripe border v-loading="loading" style="width:100%">
         <el-table-column prop="title" label="风险标题" min-width="200" />
         <el-table-column prop="probability" label="概率" width="80" align="center" />
         <el-table-column prop="impact" label="影响" width="80" align="center" />
@@ -32,25 +34,57 @@
       </el-table>
     </div>
 
-    <el-dialog v-model="dlg" :title="editId ? '编辑风险' : '新建风险'" width="560px">
+    <!-- 手机端卡片列表 -->
+    <div class="show-mobile" v-loading="loading">
+      <div v-if="risks.length === 0 && !loading" style="text-align:center;padding:40px;color:#aaa;">暂无数据</div>
+      <div class="mobile-card-list">
+        <div class="m-card" v-for="row in risks" :key="row.id">
+          <div class="m-card-header">
+            <div class="m-card-title">{{ row.title }}</div>
+            <span :class="`risk-${row.level}`" style="font-weight:600;font-size:13px">{{ row.level || '-' }}</span>
+          </div>
+          <div class="m-card-body">
+            <div class="m-field"><span class="m-field-label">状态</span>
+              <el-tag :type="riskStatusType(row.status)" size="small">{{ row.status }}</el-tag>
+            </div>
+            <div class="m-field"><span class="m-field-label">负责人</span><span class="m-field-value">{{ row.assignee || '-' }}</span></div>
+            <div class="m-field"><span class="m-field-label">概率</span><span class="m-field-value">{{ row.probability }}</span></div>
+            <div class="m-field"><span class="m-field-label">影响</span><span class="m-field-value">{{ row.impact }}</span></div>
+            <div class="m-field" style="grid-column:1/-1">
+              <span class="m-field-label">应对措施</span>
+              <span class="m-field-value" style="white-space:pre-wrap">{{ row.mitigation || '-' }}</span>
+            </div>
+          </div>
+          <div class="m-card-footer">
+            <el-button size="small" type="warning" @click="openDialog(row)">编辑</el-button>
+            <el-popconfirm title="确认删除？" @confirm="remove(row.id)">
+              <template #reference><el-button size="small" type="danger">删除</el-button></template>
+            </el-popconfirm>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 对话框 -->
+    <el-dialog v-model="dlg" :title="editId ? '编辑风险' : '新建风险'" width="min(560px, 95vw)">
       <el-form :model="form" label-width="90px">
         <el-form-item label="风险标题"><el-input v-model="form.title" /></el-form-item>
         <el-row :gutter="12">
-          <el-col :span="8">
+          <el-col :xs="24" :sm="8">
             <el-form-item label="概率">
               <el-select v-model="form.probability" style="width:100%">
                 <el-option v-for="s in probOptions" :key="s.value" :label="s.label" :value="s.value" />
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="8">
+          <el-col :xs="24" :sm="8">
             <el-form-item label="影响">
               <el-select v-model="form.impact" style="width:100%">
                 <el-option v-for="s in impactOptions" :key="s.value" :label="s.label" :value="s.value" />
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="8">
+          <el-col :xs="24" :sm="8">
             <el-form-item label="状态">
               <el-select v-model="form.status" style="width:100%">
                 <el-option v-for="s in statusOptions" :key="s.value" :label="s.label" :value="s.value" />
@@ -115,11 +149,9 @@ function riskStatusType(s) {
   return c || { '开放': 'danger', '已缓解': 'warning', '已关闭': 'success' }[s] || ''
 }
 
-onMounted(() => {
-  dictStore.fetchDicts()
-  load()
-})
+onMounted(() => { dictStore.fetchDicts(); load() })
 </script>
+
 <style scoped>
-.page-title { font-size: 20px; font-weight: 600; color: #2E4057; }
+.page-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
 </style>
