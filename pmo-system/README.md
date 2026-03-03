@@ -61,12 +61,17 @@ cd backend
 python -m venv venv
 source venv/bin/activate          # Windows: venv\Scripts\activate
 pip install -r requirements.txt
+
+# 初始化基础数据（首次部署必须执行）
+python init_data.py
+
 uvicorn app.main:app --reload --port 8000
 ```
 
 ### 注入测试数据（可选）
 
 ```bash
+# 写入示例项目/问题/风险/人天等測试数据（会先清空再写入）
 cd backend && python seed_data.py
 ```
 
