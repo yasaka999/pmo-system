@@ -20,23 +20,6 @@
       </el-col>
     </el-row>
 
-    <!-- ── 整体报告（仅 pmo/admin） ── -->
-    <div v-if="canSeePortfolioReport" class="page-card" style="margin-bottom:20px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;">
-        <div>
-          <h3 style="margin:0 0 4px 0;">📊 项目组合整体报告</h3>
-          <span style="color:#888;font-size:13px;">涵盖所有项目：执行摘要 · 重点关注 · 全局风险问题 · 里程碑跟踪 · 状态一览</span>
-        </div>
-        <div style="display:flex;gap:10px;">
-          <el-button type="primary" @click="downloadPortfolioWord" :loading="dlWord">
-            <el-icon><Document /></el-icon> 下载整体报告 (Word)
-          </el-button>
-          <el-button @click="downloadPortfolioExcel" :loading="dlExcel">
-            <el-icon><Download /></el-icon> 下载数据汇总 (Excel)
-          </el-button>
-        </div>
-      </div>
-    </div>
 
     <!-- ── 项目状态一览表 ── -->
     <div class="page-card">
