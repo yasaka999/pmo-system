@@ -60,6 +60,9 @@ SEVERITY_COLOR = {"高": COLOR_RED, "中": COLOR_ORANGE, "低": COLOR_GREEN}
 # ──────────────────────────────────────────────────────────
 # Word 辅助函数
 # ──────────────────────────────────────────────────────────
+FONT_CN = "宋体"
+
+
 def _fmt_date(d) -> str:
     if d is None:
         return "-"
@@ -68,9 +71,44 @@ def _fmt_date(d) -> str:
     return str(d)
 
 
+def _set_word_font(run, size_pt: float = None):
+    """将 run 的西文和中文字体都设为宋体。"""
+    run.font.name = FONT_CN
+    # 中文(东亚)字体必须通过 XML 属性设置
+    from docx.oxml.ns import qn as _qn
+    rPr = run._r.get_or_add_rPr()
+    rFonts = rPr.find(_qn("w:rFonts"))
+    if rFonts is None:
+        from docx.oxml import OxmlElement
+        rFonts = OxmlElement("w:rFonts")
+        rPr.insert(0, rFonts)
+    rFonts.set(_qn("w:eastAsia"), FONT_CN)
+    rFonts.set(_qn("w:ascii"), FONT_CN)
+    rFonts.set(_qn("w:hAnsi"), FONT_CN)
+    if size_pt:
+        run.font.size = Pt(size_pt)
+
+
+def _set_doc_default_font(doc: Document):
+    """设置 Word 文档正文默认字体为宋体。"""
+    from docx.oxml.ns import qn as _qn
+    from docx.oxml import OxmlElement
+    styles = doc.styles["Normal"]
+    rPr = styles.element.get_or_add_rPr()
+    rFonts = rPr.find(_qn("w:rFonts"))
+    if rFonts is None:
+        rFonts = OxmlElement("w:rFonts")
+        rPr.insert(0, rFonts)
+    rFonts.set(_qn("w:eastAsia"), FONT_CN)
+    rFonts.set(_qn("w:ascii"),    FONT_CN)
+    rFonts.set(_qn("w:hAnsi"),   FONT_CN)
+
+
 def _add_heading(doc: Document, text: str, level: int = 1):
     h = doc.add_heading(text, level=level)
-    h.runs[0].font.color.rgb = RGBColor(0x2E, 0x40, 0x57)
+    run = h.runs[0]
+    _set_word_font(run)
+    run.font.color.rgb = RGBColor(0x2E, 0x40, 0x57)
 
 
 def _add_table(doc: Document, headers: list, rows: list):
@@ -83,6 +121,7 @@ def _add_table(doc: Document, headers: list, rows: list):
         cell.text = h
         run = cell.paragraphs[0].runs[0]
         run.bold = True
+        _set_word_font(run)
         run.font.color.rgb = RGBColor(0xFF, 0xFF, 0xFF)
         cell._tc.get_or_add_tcPr().append(
             _make_cell_color(COLOR_HEADER)
@@ -90,7 +129,11 @@ def _add_table(doc: Document, headers: list, rows: list):
     # 数据行
     for r_idx, row in enumerate(rows):
         for c_idx, val in enumerate(row):
-            table.rows[r_idx + 1].cells[c_idx].text = str(val) if val is not None else "-"
+            cell = table.rows[r_idx + 1].cells[c_idx]
+            cell.text = str(val) if val is not None else "-"
+            for para in cell.paragraphs:
+                for run in para.runs:
+                    _set_word_font(run)
     doc.add_paragraph()
     return table
 
@@ -108,7 +151,7 @@ def _make_cell_color(hex_color: str):
 # Excel 辅助函数
 # ──────────────────────────────────────────────────────────
 def _excel_header_style(cell, bg_hex: str = COLOR_HEADER):
-    cell.font = Font(bold=True, color="FFFFFF", size=11)
+    cell.font = Font(bold=True, color="FFFFFF", size=11, name=FONT_CN)
     cell.fill = PatternFill("solid", fgColor=bg_hex)
     cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
     _apply_border(cell)
@@ -120,6 +163,7 @@ def _apply_border(cell):
 
 
 def _data_style(cell, align="left"):
+    cell.font = Font(name=FONT_CN, size=10)
     cell.alignment = Alignment(horizontal=align, vertical="center", wrap_text=True)
     _apply_border(cell)
 
@@ -138,12 +182,14 @@ def generate_weekly_report(project_id: int, db: Session, report_date: Optional[d
 
     today = report_date or date.today()
     doc = Document()
+    _set_doc_default_font(doc)
 
     # 标题
     title = doc.add_heading("", 0)
     run = title.add_run(f"{project.name} — 项目周报")
-    run.font.size = Pt(18)
+    _set_word_font(run, size_pt=18)
     run.font.color.rgb = RGBColor(0x2E, 0x40, 0x57)
+    run.bold = True
     title.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
     # 基本信息表
@@ -243,10 +289,12 @@ def generate_monthly_report(project_id: int, year: int, month: int, db: Session)
         raise ValueError("项目不存在")
 
     doc = Document()
+    _set_doc_default_font(doc)
     title = doc.add_heading("", 0)
     run = title.add_run(f"{project.name} — {year}年{month:02d}月项目月报")
-    run.font.size = Pt(18)
+    _set_word_font(run, size_pt=18)
     run.font.color.rgb = RGBColor(0x2E, 0x40, 0x57)
+    run.bold = True
     title.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
     # 项目总览
@@ -508,11 +556,12 @@ def generate_portfolio_report_word(db: Session, report_date: Optional[date] = No
     from datetime import timedelta
 
     doc = Document()
+    _set_doc_default_font(doc)
 
     # ---- 封面标题 ----
     title = doc.add_heading("", 0)
     run = title.add_run("PMO 项目组合综合报告")
-    run.font.size = Pt(22)
+    _set_word_font(run, size_pt=22)
     run.font.color.rgb = RGBColor(0x2E, 0x40, 0x57)
     run.bold = True
     title.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -520,7 +569,7 @@ def generate_portfolio_report_word(db: Session, report_date: Optional[date] = No
     sub = doc.add_paragraph()
     sub.alignment = WD_ALIGN_PARAGRAPH.CENTER
     sub_run = sub.add_run(f"报告日期：{_fmt_date(today)}")
-    sub_run.font.size = Pt(12)
+    _set_word_font(sub_run, size_pt=12)
     sub_run.font.color.rgb = RGBColor(0x80, 0x80, 0x80)
 
     # ─────────────────────────────────────────────
@@ -581,6 +630,7 @@ def generate_portfolio_report_word(db: Session, report_date: Optional[date] = No
             # 项目名称段
             proj_para = doc.add_paragraph()
             proj_run = proj_para.add_run(f"▶ [{p.status}] {p.name}（{p.code}）")
+            _set_word_font(proj_run)
             proj_run.bold = True
             proj_run.font.color.rgb = RGBColor(0xFF, 0x40, 0x00) if p.status == "延期" else RGBColor(0xFF, 0xC0, 0x00)
 
@@ -762,7 +812,7 @@ def generate_portfolio_excel(db: Session, report_date: Optional[date] = None) ->
     ws1 = wb.active
     ws1.title = "项目状态一览"
     ws1.cell(row=1, column=1, value=f"PMO 项目组合整体报告  生成日期：{_fmt_date(today)}")
-    ws1.cell(row=1, column=1).font = Font(bold=True, size=14, color=COLOR_HEADER)
+    ws1.cell(row=1, column=1).font = Font(bold=True, size=14, color=COLOR_HEADER, name=FONT_CN)
 
     headers1 = ["项目编号", "项目名称", "客户/甲方", "项目经理", "阶段", "状态",
                 "计划开始", "计划结束", "预算人天", "已用人天", "人天消耗%", "未关闭问题", "开放风险"]
