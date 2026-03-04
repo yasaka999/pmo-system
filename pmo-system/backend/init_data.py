@@ -89,6 +89,19 @@ DICT_DATA = [
     {"category": "risk_status", "code": "rs_open",   "label": "开放",   "color": "danger",  "sort_order": 1},
     {"category": "risk_status", "code": "rs_mitig",  "label": "已缓解", "color": "warning", "sort_order": 2},
     {"category": "risk_status", "code": "rs_closed", "label": "已关闭", "color": "success", "sort_order": 3},
+
+    # ── 看板卡片配置 ─────────────────────────
+    # is_active 控制显示/隐藏，sort_order 控制排列顺序
+    # label/color 字段不使用，仅 code 和 sort_order、is_active 有意义
+    {"category": "dashboard_widget", "code": "total",              "label": "项目总数",   "color": "", "sort_order": 1},
+    {"category": "dashboard_widget", "code": "in_progress",        "label": "进行中",     "color": "", "sort_order": 2},
+    {"category": "dashboard_widget", "code": "done",               "label": "已完成",     "color": "", "sort_order": 3},
+    {"category": "dashboard_widget", "code": "open_issues",        "label": "未关闭问题", "color": "", "sort_order": 4},
+    {"category": "dashboard_widget", "code": "open_risks",         "label": "开放风险",   "color": "", "sort_order": 5},
+    {"category": "dashboard_widget", "code": "pending_delivery",   "label": "待交付",     "color": "", "sort_order": 6},
+    {"category": "dashboard_widget", "code": "delivered",          "label": "已交付",     "color": "", "sort_order": 7},
+    {"category": "dashboard_widget", "code": "pending_acceptance", "label": "待验收",     "color": "", "sort_order": 8},
+    {"category": "dashboard_widget", "code": "accepted",           "label": "已验收",     "color": "", "sort_order": 9},
 ]
 
 def init_dicts():

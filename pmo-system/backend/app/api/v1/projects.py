@@ -39,6 +39,10 @@ def _build_summary(p: Project, db: Session) -> ProjectSummary:
         open_risk_count=open_risks, used_mandays=used,
         budget_mandays=p.budget_mandays or 0,
         created_by=p.created_by,
+        plan_delivery_date=p.plan_delivery_date,
+        actual_delivery_date=p.actual_delivery_date,
+        plan_final_acceptance_date=p.plan_final_acceptance_date,
+        actual_final_acceptance_date=p.actual_final_acceptance_date,
     )
 
 

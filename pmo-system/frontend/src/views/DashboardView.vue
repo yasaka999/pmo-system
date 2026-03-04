@@ -2,24 +2,34 @@
   <div>
     <h2 class="page-title">项目总览看板</h2>
 
-    <!-- ── 统计卡片（可点击） ── -->
-    <el-row :gutter="16" style="margin-bottom:20px">
-      <el-col :span="6" v-for="(s, i) in stats" :key="i">
-        <div class="stat-card clickable" @click="openDrawer(i)">
-          <div class="icon" :style="{ background: s.bg }">
-            <el-icon :style="{ color: '#fff', fontSize: '22px' }">
-              <component :is="s.icon" />
-            </el-icon>
-          </div>
-          <div>
-            <div class="value" :style="{ color: s.color }">{{ s.value }}</div>
-            <div class="label">{{ s.label }}</div>
-          </div>
-          <el-icon class="arrow-icon"><ArrowRight /></el-icon>
+    <!-- ── 统计看板（动态，从字典读取配置） ── -->
+    <div class="widgets-grid" style="margin-bottom:20px">
+      <div
+        v-for="w in activeWidgets"
+        :key="w.code"
+        class="stat-card clickable"
+        @click="openDrawer(w.code)"
+      >
+        <div class="icon" :style="{ background: w.bg }">
+          <el-icon style="color:#fff;font-size:22px"><component :is="w.icon" /></el-icon>
         </div>
-      </el-col>
-    </el-row>
-
+        <div class="card-content">
+          <!-- 普通单数 -->
+          <div v-if="!w.splitValue" class="value" :style="{ color: w.color }">{{ w.value }}</div>
+          <!-- 双数：逾期（红）+ 正常（蓝） -->
+          <div v-else class="value split-value">
+            <span class="sv-overdue">{{ w.splitValue.overdue }}</span>
+            <span class="sv-sep">+</span>
+            <span class="sv-normal">{{ w.splitValue.normal }}</span>
+          </div>
+          <div class="label">{{ w.label }}</div>
+          <div v-if="w.splitValue" class="split-hint">
+            <span class="sv-overdue">逾期</span>&nbsp;+&nbsp;<span class="sv-normal">未到期</span>
+          </div>
+        </div>
+        <el-icon class="arrow-icon"><ArrowRight /></el-icon>
+      </div>
+    </div>
 
     <!-- ── 项目状态一览表 ── -->
     <div class="page-card">
@@ -31,40 +41,40 @@
       </div>
       <el-table :data="projects" stripe border style="width:100%" v-loading="loading">
         <el-table-column prop="code" label="项目编号" width="120" />
-        <el-table-column prop="name" label="项目名称" min-width="200">
+        <el-table-column prop="name" label="项目名称" min-width="180">
           <template #default="{ row }">
             <el-link type="primary" @click="$router.push(`/projects/${row.id}`)">{{ row.name }}</el-link>
           </template>
         </el-table-column>
-        <el-table-column prop="client" label="客户" width="140" />
-        <el-table-column prop="manager" label="项目经理" width="110" />
-        <el-table-column prop="phase" label="阶段" width="90" />
-        <el-table-column prop="status" label="状态" width="90">
+        <el-table-column prop="client" label="客户" width="130" />
+        <el-table-column prop="manager" label="项目经理" width="100" />
+        <el-table-column prop="phase" label="阶段" width="80" />
+        <el-table-column prop="status" label="状态" width="85">
           <template #default="{ row }">
             <el-tag :type="statusType(row.status)" size="small">{{ row.status }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="plan_end" label="计划结束" width="110" />
-        <el-table-column prop="open_issue_count" label="未关闭问题" width="100" align="center">
+        <el-table-column prop="plan_end" label="计划结束" width="105" />
+        <el-table-column prop="open_issue_count" label="未关闭问题" width="90" align="center">
           <template #default="{ row }">
             <el-badge :value="row.open_issue_count" :type="row.open_issue_count > 0 ? 'danger' : 'info'" />
           </template>
         </el-table-column>
-        <el-table-column prop="open_risk_count" label="开放风险" width="90" align="center">
+        <el-table-column prop="open_risk_count" label="开放风险" width="85" align="center">
           <template #default="{ row }">
             <el-badge :value="row.open_risk_count" :type="row.open_risk_count > 0 ? 'warning' : 'info'" />
           </template>
         </el-table-column>
-        <el-table-column label="人天使用" width="130" align="center">
+        <el-table-column label="人天使用" width="120" align="center">
           <template #default="{ row }">
             <el-progress
-              :percentage="row.budget_mandays > 0 ? Math.min(Math.round(row.used_mandays / row.budget_mandays * 100), 100) : 0"
+              :percentage="row.budget_mandays > 0 ? Math.min(Math.round(row.used_mandays/row.budget_mandays*100),100) : 0"
               :color="row.used_mandays > row.budget_mandays ? '#FF4444' : '#70AD47'"
-              style="min-width:100px"
+              style="min-width:90px"
             />
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="120" align="center">
+        <el-table-column label="操作" width="80" align="center">
           <template #default="{ row }">
             <el-button size="small" @click="$router.push(`/projects/${row.id}`)">详情</el-button>
           </template>
@@ -75,9 +85,8 @@
     <!-- ══════════ 详情 Drawer ══════════ -->
     <el-drawer v-model="drawerVisible" :title="drawerTitle" size="55%" direction="rtl">
       <div class="drawer-body">
-
-        <!-- 0: 项目总数 / 1: 进行中 -->
-        <template v-if="drawerType === 0 || drawerType === 1">
+        <!-- 项目列表型看板 -->
+        <template v-if="['total','in_progress','done','pending_delivery','delivered','pending_acceptance','accepted'].includes(drawerCode)">
           <el-table :data="drawerProjects" stripe border style="width:100%">
             <el-table-column prop="code" label="项目编号" width="120" />
             <el-table-column prop="name" label="项目名称" min-width="160">
@@ -92,15 +101,26 @@
                 <el-tag :type="statusType(row.status)" size="small">{{ row.status }}</el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="plan_end" label="计划结束" width="110" />
-            <el-table-column label="里程碑" width="70" align="center">
-              <template #default="{ row }">{{ row.milestone_count }}</template>
+            <el-table-column label="交付日期" width="100">
+              <template #default="{ row }">
+                <span :style="isOverdue(row.plan_delivery_date, row.actual_delivery_date) ? 'color:#FF4444;font-weight:600' : ''">
+                  {{ row.plan_delivery_date || '-' }}
+                </span>
+              </template>
+            </el-table-column>
+            <el-table-column label="验收日期" width="100">
+              <template #default="{ row }">
+                <span :style="isOverdue(row.plan_final_acceptance_date, row.actual_final_acceptance_date) ? 'color:#FF4444;font-weight:600' : ''">
+                  {{ row.plan_final_acceptance_date || '-' }}
+                </span>
+              </template>
             </el-table-column>
           </el-table>
+          <el-empty v-if="drawerProjects.length === 0" description="暂无数据" />
         </template>
 
-        <!-- 2: 未关闭问题 -->
-        <template v-if="drawerType === 2">
+        <!-- 未关闭问题 -->
+        <template v-if="drawerCode === 'open_issues'">
           <div v-if="issueLoading" class="drawer-loading">
             <el-icon class="is-loading" style="font-size:28px"><Loading /></el-icon>
             <p>正在加载…</p>
@@ -126,15 +146,14 @@
                   </template>
                 </el-table-column>
                 <el-table-column prop="assignee" label="负责人" width="90" />
-                <el-table-column prop="due_date" label="截止日期" width="110" />
               </el-table>
             </div>
             <el-empty v-if="issueByProject.length === 0" description="暂无未关闭问题 🎉" />
           </template>
         </template>
 
-        <!-- 3: 开放风险 -->
-        <template v-if="drawerType === 3">
+        <!-- 开放风险 -->
+        <template v-if="drawerCode === 'open_risks'">
           <div v-if="riskLoading" class="drawer-loading">
             <el-icon class="is-loading" style="font-size:28px"><Loading /></el-icon>
             <p>正在加载…</p>
@@ -149,25 +168,22 @@
               </div>
               <el-table :data="proj.risks" stripe size="small" style="width:100%">
                 <el-table-column prop="title" label="风险标题" min-width="180" />
-                <el-table-column prop="probability" label="概率" width="70" />
-                <el-table-column prop="impact" label="影响" width="70" />
                 <el-table-column prop="level" label="风险级别" width="90">
                   <template #default="{ row }">
                     <el-tag :type="{ '极高':'danger','高':'warning','中':'','低':'success' }[row.level]" size="small">{{ row.level }}</el-tag>
                   </template>
                 </el-table-column>
-                <el-table-column prop="assignee" label="负责人" width="90" />
                 <el-table-column prop="status" label="状态" width="80">
                   <template #default="{ row }">
                     <el-tag :type="{ '开放':'danger','已缓解':'warning','已关闭':'info' }[row.status]" size="small">{{ row.status }}</el-tag>
                   </template>
                 </el-table-column>
+                <el-table-column prop="assignee" label="负责人" width="90" />
               </el-table>
             </div>
             <el-empty v-if="riskByProject.length === 0" description="暂无开放风险 🎉" />
           </template>
         </template>
-
       </div>
     </el-drawer>
   </div>
@@ -179,68 +195,112 @@ import { useRouter } from 'vue-router'
 import { projectApi, reportApi, downloadBlob, issueApi, riskApi } from '@/api'
 import { ElMessage } from 'element-plus'
 import { useDictStore } from '@/stores/dict'
-import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
 const dictStore = useDictStore()
-const auth = useAuthStore()
-const canSeePortfolioReport = computed(() => ['admin', 'pmo'].includes(auth.user?.role))
 
 const projects = ref([])
 const loading = ref(false)
 const downloading = ref(false)
-const dlWord = ref(false)
-const dlExcel = ref(false)
-
-// ── Drawer 状态 ──────────────────
 const drawerVisible = ref(false)
-const drawerType = ref(0)      // 0=总数 1=进行中 2=问题 3=风险
+const drawerCode = ref('')
 const issueLoading = ref(false)
 const riskLoading = ref(false)
-const issueByProject = ref([]) // [{ id, code, name, issues:[] }]
-const riskByProject = ref([])  // [{ id, code, name, risks:[] }]
+const issueByProject = ref([])
+const riskByProject = ref([])
 
-const drawerTitles = ['所有项目详情', '进行中项目详情', '未关闭问题详情', '开放风险详情']
-const drawerTitle = computed(() => drawerTitles[drawerType.value] || '')
+const TODAY = new Date()
+TODAY.setHours(0, 0, 0, 0)
+
+// ── 工具函数 ─────────────────────────────────────────
+function isOverdue(planDate, actualDate) {
+  if (actualDate) return false   // 已完成，不算逾期
+  if (!planDate) return false
+  return new Date(planDate) < TODAY
+}
+
+// ── 所有看板定义（固定，code 对应字典配置） ──────────
+const WIDGET_DEFS = {
+  total:              { label: '项目总数',   icon: 'FolderOpened', bg: '#4472C4', color: '#4472C4' },
+  in_progress:        { label: '进行中',     icon: 'Loading',      bg: '#4CAF50', color: '#4CAF50' },
+  done:               { label: '已完成',     icon: 'CircleCheck',  bg: '#909399', color: '#909399' },
+  open_issues:        { label: '未关闭问题', icon: 'Warning',      bg: '#FF4444', color: '#FF4444' },
+  open_risks:         { label: '开放风险',   icon: 'Bell',         bg: '#FFC000', color: '#FFC000' },
+  pending_delivery:   { label: '待交付',     icon: 'Van',          bg: '#4472C4', color: '#4472C4', split: true },
+  delivered:          { label: '已交付',     icon: 'Checked',      bg: '#70AD47', color: '#70AD47' },
+  pending_acceptance: { label: '待验收',     icon: 'DocumentChecked', bg: '#E6820E', color: '#E6820E', split: true },
+  accepted:           { label: '已验收',     icon: 'Medal',        bg: '#70AD47', color: '#70AD47' },
+}
+
+// ── 统计计算 ─────────────────────────────────────────
+const computed_stats = computed(() => {
+  const ps = projects.value
+  const pendingDel = ps.filter(p => p.plan_delivery_date && !p.actual_delivery_date)
+  const pendingAcc = ps.filter(p => p.actual_delivery_date && !p.actual_final_acceptance_date)
+  return {
+    total: ps.length,
+    in_progress: ps.filter(p => !['暂停', '已完成'].includes(p.status)).length,
+    done: ps.filter(p => p.status === '已完成').length,
+    open_issues: ps.reduce((s, p) => s + (p.open_issue_count || 0), 0),
+    open_risks: ps.reduce((s, p) => s + (p.open_risk_count || 0), 0),
+    delivered: ps.filter(p => p.actual_delivery_date).length,
+    accepted: ps.filter(p => p.actual_final_acceptance_date).length,
+    pending_delivery: {
+      overdue: pendingDel.filter(p => isOverdue(p.plan_delivery_date, p.actual_delivery_date)).length,
+      normal: pendingDel.filter(p => !isOverdue(p.plan_delivery_date, p.actual_delivery_date)).length,
+    },
+    pending_acceptance: {
+      overdue: pendingAcc.filter(p => isOverdue(p.plan_final_acceptance_date, p.actual_final_acceptance_date)).length,
+      normal: pendingAcc.filter(p => !isOverdue(p.plan_final_acceptance_date, p.actual_final_acceptance_date)).length,
+    },
+  }
+})
+
+// ── 从字典读取启用的看板，按 sort_order 排序 ──────────
+const activeWidgets = computed(() => {
+  const widgetOptions = dictStore.getOptions('dashboard_widget')
+  // getOptions 已按 sort_order 排序，且只返回 is_active=true 的
+  return widgetOptions.map(opt => {
+    const def = WIDGET_DEFS[opt.value] || { label: opt.label, icon: 'Grid', bg: '#aaa', color: '#aaa' }
+    const st = computed_stats.value
+    const val = st[opt.value]
+    const isSplit = def.split && typeof val === 'object'
+    return {
+      code: opt.value,
+      label: def.label,
+      icon: def.icon,
+      bg: def.bg,
+      color: def.color,
+      value: isSplit ? (val.overdue + val.normal) : val,
+      splitValue: isSplit ? val : null,
+    }
+  })
+})
+
+// ── Drawer ────────────────────────────────────────────
+const drawerTitle = computed(() => {
+  const def = WIDGET_DEFS[drawerCode.value]
+  return def ? `${def.label} — 项目列表` : '详情'
+})
 
 const drawerProjects = computed(() => {
-  if (drawerType.value === 0) return projects.value
-  if (drawerType.value === 1) return projects.value.filter(p => ['正常', '预警'].includes(p.status))
+  const ps = projects.value
+  const code = drawerCode.value
+  if (code === 'total') return ps
+  if (code === 'in_progress') return ps.filter(p => !['暂停', '已完成'].includes(p.status))
+  if (code === 'done') return ps.filter(p => p.status === '已完成')
+  if (code === 'delivered') return ps.filter(p => p.actual_delivery_date)
+  if (code === 'accepted') return ps.filter(p => p.actual_final_acceptance_date)
+  if (code === 'pending_delivery') return ps.filter(p => p.plan_delivery_date && !p.actual_delivery_date)
+  if (code === 'pending_acceptance') return ps.filter(p => p.actual_delivery_date && !p.actual_final_acceptance_date)
   return []
 })
 
-onMounted(async () => {
-  dictStore.fetchDicts()
-  loading.value = true
-  try { projects.value = await projectApi.list() } finally { loading.value = false }
-})
-
-const stats = computed(() => {
-  const ps = projects.value
-  return [
-    { label: '项目总数', value: ps.length, icon: 'FolderOpened', bg: '#4472C4', color: '#4472C4' },
-    { label: '进行中', value: ps.filter(p => ['正常', '预警'].includes(p.status)).length, icon: 'Loading', bg: '#70AD47', color: '#70AD47' },
-    { label: '未关闭问题', value: ps.reduce((s, p) => s + p.open_issue_count, 0), icon: 'Warning', bg: '#FF4444', color: '#FF4444' },
-    { label: '开放风险', value: ps.reduce((s, p) => s + p.open_risk_count, 0), icon: 'Bell', bg: '#FFC000', color: '#FFC000' },
-  ]
-})
-
-function statusType(s) {
-  const c = dictStore.getDictItem('project_status', s).color
-  return c || { '正常': 'success', '预警': 'warning', '延期': 'danger', '已完成': 'info', '暂停': '' }[s] || ''
-}
-
-function goProject(id) {
-  drawerVisible.value = false
-  router.push(`/projects/${id}`)
-}
-
-async function openDrawer(type) {
-  drawerType.value = type
+async function openDrawer(code) {
+  drawerCode.value = code
   drawerVisible.value = true
 
-  // 未关闭问题
-  if (type === 2 && issueByProject.value.length === 0) {
+  if (code === 'open_issues' && issueByProject.value.length === 0) {
     issueLoading.value = true
     try {
       const proj = projects.value.filter(p => p.open_issue_count > 0)
@@ -251,13 +311,10 @@ async function openDrawer(type) {
         })))
       )
       issueByProject.value = results.filter(r => r.issues.length > 0)
-    } finally {
-      issueLoading.value = false
-    }
+    } finally { issueLoading.value = false }
   }
 
-  // 开放风险
-  if (type === 3 && riskByProject.value.length === 0) {
+  if (code === 'open_risks' && riskByProject.value.length === 0) {
     riskLoading.value = true
     try {
       const proj = projects.value.filter(p => p.open_risk_count > 0)
@@ -268,11 +325,24 @@ async function openDrawer(type) {
         })))
       )
       riskByProject.value = results.filter(r => r.risks.length > 0)
-    } finally {
-      riskLoading.value = false
-    }
+    } finally { riskLoading.value = false }
   }
 }
+
+function goProject(id) {
+  drawerVisible.value = false
+  router.push(`/projects/${id}`)
+}
+
+function statusType(s) {
+  return { '正常': 'success', '预警': 'warning', '延期': 'danger', '已完成': 'info', '暂停': '' }[s] || ''
+}
+
+onMounted(async () => {
+  dictStore.fetchDicts()
+  loading.value = true
+  try { projects.value = await projectApi.list() } finally { loading.value = false }
+})
 
 async function downloadOverview() {
   downloading.value = true
@@ -280,92 +350,76 @@ async function downloadOverview() {
     const res = await reportApi.statusOverview()
     downloadBlob(res, '项目状态一览.xlsx')
     ElMessage.success('导出成功')
-  } finally {
-    downloading.value = false
-  }
-}
-
-async function downloadPortfolioWord() {
-  dlWord.value = true
-  try {
-    const today = new Date().toISOString().slice(0, 10)
-    const res = await reportApi.portfolioWord()
-    downloadBlob(res, `PMO项目组合综合报告_${today}.docx`)
-    ElMessage.success('整体报告（Word）下载成功')
-  } catch (e) {
-    ElMessage.error('报告生成失败，请稍后重试')
-  } finally {
-    dlWord.value = false
-  }
-}
-
-async function downloadPortfolioExcel() {
-  dlExcel.value = true
-  try {
-    const today = new Date().toISOString().slice(0, 10)
-    const res = await reportApi.portfolioExcel()
-    downloadBlob(res, `PMO项目组合数据汇总_${today}.xlsx`)
-    ElMessage.success('数据汇总（Excel）下载成功')
-  } catch (e) {
-    ElMessage.error('报告生成失败，请稍后重试')
-  } finally {
-    dlExcel.value = false
-  }
+  } finally { downloading.value = false }
 }
 </script>
 
 <style scoped>
 .page-title { font-size: 20px; font-weight: 600; color: #2E4057; margin-bottom: 20px; }
 
+/* 看板网格：自适应宽度，每张最小 200px */
+.widgets-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 16px;
+}
+
 /* 统计卡片 */
 .stat-card {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 18px 20px;
+  gap: 14px;
+  padding: 18px 16px;
   background: #fff;
   border-radius: 12px;
   box-shadow: 0 2px 10px rgba(0,0,0,.06);
-}
-.stat-card.clickable {
   cursor: pointer;
-  position: relative;
   transition: transform .15s, box-shadow .15s;
+  position: relative;
+  min-width: 0;
 }
-.stat-card.clickable:hover {
+.stat-card:hover {
   transform: translateY(-3px);
   box-shadow: 0 6px 20px rgba(0,0,0,.12);
 }
 .stat-card .icon {
-  width: 48px;
-  height: 48px;
+  width: 46px; height: 46px;
   border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }
-.stat-card .value { font-size: 28px; font-weight: 700; line-height: 1; }
-.stat-card .label { font-size: 13px; color: #888; margin-top: 4px; }
-.arrow-icon {
-  margin-left: auto;
-  color: #C0C4CC;
-  font-size: 16px;
-  transition: color .15s;
-}
-.stat-card.clickable:hover .arrow-icon { color: #409EFF; }
+.card-content { flex: 1; min-width: 0; }
+.value { font-size: 26px; font-weight: 700; line-height: 1.1; }
+.label { font-size: 12px; color: #888; margin-top: 3px; }
+.arrow-icon { color: #C0C4CC; font-size: 15px; transition: color .15s; }
+.stat-card:hover .arrow-icon { color: #409EFF; }
+
+/* 双数展示 */
+.split-value { display: flex; align-items: baseline; gap: 3px; }
+.sv-overdue { color: #FF4444; font-size: 22px; font-weight: 700; }
+.sv-normal  { color: #4472C4; font-size: 22px; font-weight: 700; }
+.sv-sep     { color: #aaa; font-size: 16px; }
+.split-hint { font-size: 11px; color: #aaa; margin-top: 2px; }
+.split-hint .sv-overdue { font-size: 11px; }
+.split-hint .sv-normal  { font-size: 11px; }
 
 /* Drawer */
 .drawer-body { padding: 0 4px; }
 .drawer-loading { text-align: center; padding: 60px 0; color: #888; }
 .proj-group { margin-bottom: 24px; }
 .proj-group-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  display: flex; align-items: center; gap: 10px;
   padding: 8px 0 10px;
   border-bottom: 2px solid #f0f0f0;
   margin-bottom: 8px;
 }
 .proj-group-title { font-size: 14px; font-weight: 600; }
+
+/* 手机端：单列 */
+@media (max-width: 768px) {
+  .widgets-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .stat-card { padding: 14px 10px; gap: 10px; }
+  .value { font-size: 22px; }
+  .sv-overdue, .sv-normal { font-size: 18px; }
+}
 </style>
