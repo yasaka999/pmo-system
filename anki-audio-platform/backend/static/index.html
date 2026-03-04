@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AnkiAudio Platform</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0f1117; --card: #1a1d27; --border: #2a2d3a;
+    --accent: #4a90e2; --success: #4caf50; --error: #e25f4a;
+    --warn: #f5a623; --text: #e8eaf0; --text2: #9095a8;
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg); color: var(--text); min-height: 100vh; padding: 20px; }
+
+  .container { max-width: 800px; margin: 0 auto; }
+  header { padding: 32px 0 24px; border-bottom: 1px solid var(--border); margin-bottom: 32px; }
+  header h1 { font-size: 1.8em; color: var(--accent); }
+  header p { margin-top: 6px; color: var(--text2); font-size: 0.9em; }
+
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 20px; }
+  .card h2 { font-size: 1em; color: var(--text2); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px; }
+
+  .input-row { display: flex; gap: 10px; }
+  .input-row input[type=text] {
+    flex: 1; padding: 12px 16px; border: 1px solid var(--border);
+    border-radius: 8px; background: #0f1117; color: var(--text);
+    font-size: 0.95em; outline: none; transition: border-color 0.2s;
+  }
+  .input-row input:focus { border-color: var(--accent); }
+  select {
+    padding: 12px 12px; border: 1px solid var(--border); border-radius: 8px;
+    background: #0f1117; color: var(--text); font-size: 0.95em; cursor: pointer;
+  }
+  button.primary {
+    padding: 12px 24px; background: var(--accent); color: white;
+    border: none; border-radius: 8px; font-size: 0.95em;
+    cursor: pointer; transition: opacity 0.2s; white-space: nowrap;
+  }
+  button.primary:hover { opacity: 0.85; }
+  button.primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  #status-area { display: none; margin-top: 16px; }
+  .progress-wrap { background: #0f1117; border-radius: 4px; height: 6px; overflow: hidden; margin-top: 8px; }
+  .progress-bar { height: 100%; background: var(--accent); width: 0%; transition: width 0.4s; }
+  .status-label { font-size: 0.88em; color: var(--text2); margin-top: 6px; }
+
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; color: var(--text2); font-size: 0.8em; text-transform: uppercase;
+       letter-spacing: 0.05em; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  td { padding: 12px 0; border-bottom: 1px solid var(--border); font-size: 0.9em; }
+  td:last-child { text-align: right; }
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 0.78em; }
+  .badge-done { background: rgba(76,175,80,0.15); color: var(--success); }
+  .badge-error { background: rgba(226,95,74,0.15); color: var(--error); }
+  .badge-processing, .badge-downloading, .badge-splitting, .badge-exporting {
+    background: rgba(245,166,35,0.15); color: var(--warn); }
+  .badge-pending { background: rgba(144,149,168,0.15); color: var(--text2); }
+  a.dl-btn { color: var(--accent); text-decoration: none; font-size: 0.85em; }
+  a.dl-btn:hover { text-decoration: underline; }
+
+  .empty { color: var(--text2); text-align: center; padding: 32px 0; font-size: 0.9em; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>🎧 AnkiAudio Platform</h1>
+    <p>输入 YouTube 视频链接，自动生成可导入 Anki 的听力卡片牌组</p>
+  </header>
+
+  <!-- 提交表单 -->
+  <div class="card">
+    <h2>新建牌组</h2>
+    <div class="input-row">
+      <input type="text" id="ytUrl" placeholder="粘贴 YouTube 视频链接..." />
+      <select id="lang">
+        <option value="en">English</option>
+        <option value="zh">中文</option>
+        <option value="ja">日本語</option>
+        <option value="ko">한국어</option>
+        <option value="de">Deutsch</option>
+        <option value="fr">Français</option>
+      </select>
+      <button class="primary" id="submitBtn" onclick="submitUrl()">开始制作</button>
+    </div>
+    <div id="status-area">
+      <div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
+      <div class="status-label" id="statusLabel">处理中...</div>
+    </div>
+  </div>
+
+  <!-- 牌组列表 -->
+  <div class="card">
+    <h2>我的牌组</h2>
+    <div id="deckList"><div class="empty">暂无牌组，提交链接开始制作</div></div>
+  </div>
+</div>
+
+<script>
+let pollingTimer = null;
+
+async function submitUrl() {
+  const url = document.getElementById('ytUrl').value.trim();
+  const lang = document.getElementById('lang').value;
+  if (!url) { alert('请输入 YouTube 链接'); return; }
+
+  document.getElementById('submitBtn').disabled = true;
+  document.getElementById('status-area').style.display = 'block';
+  document.getElementById('statusLabel').textContent = '提交中...';
+  document.getElementById('progressBar').style.width = '5%';
+
+  try {
+    const res = await fetch('/process', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ youtube_url: url, lang })
+    });
+    if (!res.ok) { throw new Error(await res.text()); }
+    const data = await res.json();
+    startPolling(data.task_id);
+  } catch(e) {
+    document.getElementById('statusLabel').textContent = '❌ 提交失败: ' + e.message;
+    document.getElementById('submitBtn').disabled = false;
+  }
+}
+
+function startPolling(taskId) {
+  if (pollingTimer) clearInterval(pollingTimer);
+  pollingTimer = setInterval(async () => {
+    try {
+      const res = await fetch('/status/' + taskId);
+      const data = await res.json();
+      updateStatus(data);
+      if (data.done || data.status === 'error') {
+        clearInterval(pollingTimer);
+        document.getElementById('submitBtn').disabled = false;
+        loadDecks();
+      }
+    } catch(e) {}
+  }, 2000);
+}
+
+function updateStatus(data) {
+  const bar = document.getElementById('progressBar');
+  const label = document.getElementById('statusLabel');
+  const statusMap = {
+    'pending': '等待处理...', 'downloading': '⬇ 下载音频和字幕...',
+    'processing': '⚙ 处理中...', 'splitting': '✂ 切分音频片段...',
+    'exporting': '📦 生成 Anki 牌组...', 'done': '✅ 制作完成！',
+    'error': '❌ 出错了'
+  };
+  label.textContent = (statusMap[data.status] || data.status)
+    + (data.title ? ` — ${data.title}` : '')
+    + (data.total > 0 ? ` (${data.progress}/${data.total})` : '');
+
+  const pct = data.total > 0 ? Math.round(data.progress / data.total * 100) : 30;
+  bar.style.width = (data.status === 'done' ? 100 : pct) + '%';
+  if (data.error_msg) label.textContent += ': ' + data.error_msg;
+}
+
+async function loadDecks() {
+  const res = await fetch('/decks');
+  const decks = await res.json();
+  const el = document.getElementById('deckList');
+  if (!decks.length) { el.innerHTML = '<div class="empty">暂无牌组，提交链接开始制作</div>'; return; }
+
+  el.innerHTML = `<table>
+    <thead><tr><th>标题</th><th>状态</th><th>片段数</th><th>创建时间</th><th></th></tr></thead>
+    <tbody>
+    ${decks.map(d => `
+      <tr>
+        <td title="${d.youtube_url}">${d.title || '处理中...'}</td>
+        <td><span class="badge badge-${d.status}">${d.status}</span></td>
+        <td>${d.total || '-'}</td>
+        <td>${d.created_at ? d.created_at.substring(0,16) : '-'}</td>
+        <td>${d.status === 'done' ? `<a class="dl-btn" href="/export/${d.id}/anki">⬇ 下载 .apkg</a>` : ''}</td>
+      </tr>`).join('')}
+    </tbody></table>`;
+}
+
+// 初始加载
+loadDecks();
+setInterval(loadDecks, 10000); // 每10秒刷新列表
+</script>
+</body>
+</html>
