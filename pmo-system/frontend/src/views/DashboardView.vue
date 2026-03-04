@@ -86,7 +86,7 @@
     <el-drawer v-model="drawerVisible" :title="drawerTitle" size="55%" direction="rtl">
       <div class="drawer-body">
         <!-- 项目列表型看板 -->
-        <template v-if="['total','in_progress','done','pending_delivery','delivered','pending_acceptance','accepted'].includes(drawerCode)">
+        <template v-if="['total','in_progress','done','pending_delivery','delivered','pending_acceptance','accepted','status_normal','status_warning','status_delayed','status_paused','status_done'].includes(drawerCode)">
           <el-table :data="drawerProjects" stripe border style="width:100%">
             <el-table-column prop="code" label="项目编号" width="120" />
             <el-table-column prop="name" label="项目名称" min-width="160">
