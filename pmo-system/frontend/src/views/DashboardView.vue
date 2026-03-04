@@ -46,46 +46,38 @@
     <!-- ── 项目状态一览表 ── -->
     <div class="page-card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-        <h3>项目状态一览</h3>
+        <h3>项目状态一览
+          <span style="font-size:12px;font-weight:400;color:#999;margin-left:6px">列设置与项目列表页同步</span>
+        </h3>
         <el-button size="small" @click="downloadOverview" :loading="downloading">
           <el-icon><Download /></el-icon> 导出Excel
         </el-button>
       </div>
       <el-table :data="projects" stripe border style="width:100%" v-loading="loading">
-        <el-table-column prop="code" label="项目编号" width="120" />
-        <el-table-column prop="name" label="项目名称" min-width="180">
-          <template #default="{ row }">
-            <el-link type="primary" @click="$router.push(`/projects/${row.id}`)">{{ row.name }}</el-link>
-          </template>
-        </el-table-column>
-        <el-table-column prop="client" label="客户" width="130" />
-        <el-table-column prop="manager" label="项目经理" width="100" />
-        <el-table-column prop="phase" label="阶段" width="80" />
-        <el-table-column prop="status" label="状态" width="85">
-          <template #default="{ row }">
-            <el-tag :type="statusType(row.status)" size="small">{{ row.status }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="plan_end" label="计划结束" width="105" />
-        <el-table-column prop="open_issue_count" label="未关闭问题" width="90" align="center">
-          <template #default="{ row }">
-            <el-badge :value="row.open_issue_count" :type="row.open_issue_count > 0 ? 'danger' : 'info'" />
-          </template>
-        </el-table-column>
-        <el-table-column prop="open_risk_count" label="开放风险" width="85" align="center">
-          <template #default="{ row }">
-            <el-badge :value="row.open_risk_count" :type="row.open_risk_count > 0 ? 'warning' : 'info'" />
-          </template>
-        </el-table-column>
-        <el-table-column label="人天使用" width="120" align="center">
-          <template #default="{ row }">
-            <el-progress
-              :percentage="row.budget_mandays > 0 ? Math.min(Math.round(row.used_mandays/row.budget_mandays*100),100) : 0"
-              :color="row.used_mandays > row.budget_mandays ? '#FF4444' : '#70AD47'"
-              style="min-width:90px"
-            />
-          </template>
-        </el-table-column>
+        <!-- 动态列（与项目列表页共享 project_list_cols 配置） -->
+        <template v-for="col in visibleOverviewCols" :key="col.key">
+          <el-table-column v-if="col.key === 'name'" :label="col.label" min-width="180">
+            <template #default="{ row }">
+              <el-link type="primary" @click="$router.push(`/projects/${row.id}`)">{{ row.name }}</el-link>
+            </template>
+          </el-table-column>
+          <el-table-column v-else-if="col.key === 'status'" :label="col.label" width="90">
+            <template #default="{ row }">
+              <el-tag :type="statusType(row.status)" size="small">{{ row.status }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column v-else-if="col.key === 'mandays'" :label="col.label" width="120" align="center">
+            <template #default="{ row }">
+              <el-progress
+                :percentage="row.budget_mandays > 0 ? Math.min(Math.round(row.used_mandays/row.budget_mandays*100),100) : 0"
+                :color="row.used_mandays > row.budget_mandays ? '#FF4444' : '#70AD47'"
+                style="min-width:90px"
+              />
+            </template>
+          </el-table-column>
+          <el-table-column v-else :prop="col.prop" :label="col.label" :width="col.width" />
+        </template>
+        <!-- 操作列始终固定 -->
         <el-table-column label="操作" width="80" align="center">
           <template #default="{ row }">
             <el-button size="small" @click="$router.push(`/projects/${row.id}`)">详情</el-button>
@@ -229,6 +221,44 @@ const COLS_KEY = 'dashboard_grid_cols'
 const gridCols = ref(parseInt(localStorage.getItem(COLS_KEY) || '4', 10))
 watch(gridCols, v => localStorage.setItem(COLS_KEY, String(v)))
 const gridStyle = computed(() => ({ gridTemplateColumns: `repeat(${gridCols.value}, 1fr)` }))
+
+// ── 项目状态一览列（与项目列表页共享 project_list_cols） ─────────────
+// 默认列定义（与 ProjectListView 保持一致）
+const OVERVIEW_DEFAULT_COLS = [
+  { key: 'code',        label: '项目编号',   prop: 'code',        width: 120  },
+  { key: 'name',        label: '项目名称',   prop: 'name',        width: null },
+  { key: 'contract_no', label: '合同编号',   prop: 'contract_no', width: 140  },
+  { key: 'region',      label: '区域',       prop: 'region',      width: 100  },
+  { key: 'client',      label: '客户',       prop: 'client',      width: 130  },
+  { key: 'manager',     label: '项目经理',   prop: 'manager',     width: 100  },
+  { key: 'phase',       label: '阶段',       prop: 'phase',       width: 80   },
+  { key: 'status',      label: '状态',       prop: 'status',      width: 85   },
+  { key: 'plan_start',  label: '计划开始',   prop: 'plan_start',  width: 105  },
+  { key: 'plan_end',    label: '计划结束',   prop: 'plan_end',    width: 105  },
+  { key: 'plan_delivery_date',            label: '计划交付', prop: 'plan_delivery_date',            width: 105 },
+  { key: 'actual_delivery_date',          label: '实际交付', prop: 'actual_delivery_date',          width: 105 },
+  { key: 'plan_initial_acceptance_date',  label: '计划初验', prop: 'plan_initial_acceptance_date',  width: 105 },
+  { key: 'actual_initial_acceptance_date',label: '实际初验', prop: 'actual_initial_acceptance_date',width: 105 },
+  { key: 'plan_final_acceptance_date',    label: '计划终验', prop: 'plan_final_acceptance_date',    width: 105 },
+  { key: 'actual_final_acceptance_date',  label: '实际终验', prop: 'actual_final_acceptance_date',  width: 105 },
+  { key: 'mandays',     label: '人天使用',   prop: null,          width: 120  },
+]
+const OVERVIEW_DEFAULT_VISIBLE = new Set(['code','name','client','manager','phase','status','plan_end','mandays'])
+
+const visibleOverviewCols = computed(() => {
+  try {
+    const saved = JSON.parse(localStorage.getItem('project_list_cols') || 'null')
+    const colMap = Object.fromEntries(OVERVIEW_DEFAULT_COLS.map(c => [c.key, c]))
+    if (saved) {
+      // 按保存的顺序和 visible 来输出
+      return saved
+        .filter(s => s.visible && colMap[s.key])
+        .map(s => colMap[s.key])
+    }
+  } catch { /* ignore */ }
+  // 没有配置则用默认可见列
+  return OVERVIEW_DEFAULT_COLS.filter(c => OVERVIEW_DEFAULT_VISIBLE.has(c.key))
+})
 
 // ── 工具函数 ─────────────────────────────────────────
 function isOverdue(planDate, actualDate) {
