@@ -165,6 +165,9 @@ const WIDGET_LABELS = {
   open_issues: '未关闭问题', open_risks: '开放风险',
   pending_delivery: '待交付', delivered: '已交付',
   pending_acceptance: '待验收', accepted: '已验收',
+  status_normal: '状态：正常', status_warning: '状态：预警',
+  status_delayed: '状态：延期', status_paused: '状态：暂停',
+  status_done: '状态：已完成',
 }
 const widgetItems = reactive([])   // { id, code, label, is_active, sort_order }
 

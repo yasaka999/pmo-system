@@ -102,6 +102,12 @@ DICT_DATA = [
     {"category": "dashboard_widget", "code": "delivered",          "label": "已交付",     "color": "", "sort_order": 7},
     {"category": "dashboard_widget", "code": "pending_acceptance", "label": "待验收",     "color": "", "sort_order": 8},
     {"category": "dashboard_widget", "code": "accepted",           "label": "已验收",     "color": "", "sort_order": 9},
+    # 按项目状态细分的卡片
+    {"category": "dashboard_widget", "code": "status_normal",  "label": "正常",   "color": "", "sort_order": 10},
+    {"category": "dashboard_widget", "code": "status_warning", "label": "预警",   "color": "", "sort_order": 11},
+    {"category": "dashboard_widget", "code": "status_delayed", "label": "延期",   "color": "", "sort_order": 12},
+    {"category": "dashboard_widget", "code": "status_paused",  "label": "暂停",   "color": "", "sort_order": 13},
+    {"category": "dashboard_widget", "code": "status_done",    "label": "已完成", "color": "", "sort_order": 14},
 ]
 
 def init_dicts():

@@ -221,15 +221,21 @@ function isOverdue(planDate, actualDate) {
 
 // ── 所有看板定义（固定，code 对应字典配置） ──────────
 const WIDGET_DEFS = {
-  total:              { label: '项目总数',   icon: 'FolderOpened', bg: '#4472C4', color: '#4472C4' },
-  in_progress:        { label: '进行中',     icon: 'Loading',      bg: '#4CAF50', color: '#4CAF50' },
-  done:               { label: '已完成',     icon: 'CircleCheck',  bg: '#909399', color: '#909399' },
-  open_issues:        { label: '未关闭问题', icon: 'Warning',      bg: '#FF4444', color: '#FF4444' },
-  open_risks:         { label: '开放风险',   icon: 'Bell',         bg: '#FFC000', color: '#FFC000' },
-  pending_delivery:   { label: '待交付',     icon: 'Van',          bg: '#4472C4', color: '#4472C4', split: true },
-  delivered:          { label: '已交付',     icon: 'Checked',      bg: '#70AD47', color: '#70AD47' },
-  pending_acceptance: { label: '待验收',     icon: 'DocumentChecked', bg: '#E6820E', color: '#E6820E', split: true },
-  accepted:           { label: '已验收',     icon: 'Medal',        bg: '#70AD47', color: '#70AD47' },
+  total:              { label: '项目总数',   icon: 'FolderOpened',       bg: '#4472C4', color: '#4472C4' },
+  in_progress:        { label: '进行中',     icon: 'Loading',            bg: '#4CAF50', color: '#4CAF50' },
+  done:               { label: '已完成',     icon: 'CircleCheck',        bg: '#909399', color: '#909399' },
+  open_issues:        { label: '未关闭问题', icon: 'Warning',            bg: '#FF4444', color: '#FF4444' },
+  open_risks:         { label: '开放风险',   icon: 'Bell',               bg: '#FFC000', color: '#FFC000' },
+  pending_delivery:   { label: '待交付',     icon: 'Van',                bg: '#4472C4', color: '#4472C4', split: true },
+  delivered:          { label: '已交付',     icon: 'Checked',            bg: '#70AD47', color: '#70AD47' },
+  pending_acceptance: { label: '待验收',     icon: 'DocumentChecked',    bg: '#E6820E', color: '#E6820E', split: true },
+  accepted:           { label: '已验收',     icon: 'Medal',              bg: '#70AD47', color: '#70AD47' },
+  // 按项目状态细分
+  status_normal:  { label: '正常',   icon: 'SuccessFilled',      bg: '#67C23A', color: '#67C23A' },
+  status_warning: { label: '预警',   icon: 'WarnTriangleFilled', bg: '#E6A23C', color: '#E6A23C' },
+  status_delayed: { label: '延期',   icon: 'Clock',              bg: '#F56C6C', color: '#F56C6C' },
+  status_paused:  { label: '暂停',   icon: 'VideoPause',         bg: '#909399', color: '#909399' },
+  status_done:    { label: '已完成(状态)', icon: 'CircleCheck',  bg: '#409EFF', color: '#409EFF' },
 }
 
 // ── 统计计算 ─────────────────────────────────────────
@@ -253,6 +259,12 @@ const computed_stats = computed(() => {
       overdue: pendingAcc.filter(p => isOverdue(p.plan_final_acceptance_date, p.actual_final_acceptance_date)).length,
       normal: pendingAcc.filter(p => !isOverdue(p.plan_final_acceptance_date, p.actual_final_acceptance_date)).length,
     },
+    // 按状态细分
+    status_normal:  ps.filter(p => p.status === '正常').length,
+    status_warning: ps.filter(p => p.status === '预警').length,
+    status_delayed: ps.filter(p => p.status === '延期').length,
+    status_paused:  ps.filter(p => p.status === '暂停').length,
+    status_done:    ps.filter(p => p.status === '已完成').length,
   }
 })
 
@@ -293,6 +305,12 @@ const drawerProjects = computed(() => {
   if (code === 'accepted') return ps.filter(p => p.actual_final_acceptance_date)
   if (code === 'pending_delivery') return ps.filter(p => p.plan_delivery_date && !p.actual_delivery_date)
   if (code === 'pending_acceptance') return ps.filter(p => p.actual_delivery_date && !p.actual_final_acceptance_date)
+  // 按状态拆分
+  const STATUS_MAP = {
+    status_normal: '正常', status_warning: '预警',
+    status_delayed: '延期', status_paused: '暂停', status_done: '已完成'
+  }
+  if (STATUS_MAP[code]) return ps.filter(p => p.status === STATUS_MAP[code])
   return []
 })
 
