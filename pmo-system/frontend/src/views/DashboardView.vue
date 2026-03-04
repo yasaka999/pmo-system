@@ -1,9 +1,21 @@
 <template>
   <div>
-    <h2 class="page-title">项目总览看板</h2>
+    <!-- 标题行：右侧加列数切换器 -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <h2 class="page-title" style="margin:0">项目总览看板</h2>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:12px;color:#888">每行列数</span>
+        <el-radio-group v-model="gridCols" size="small">
+          <el-radio-button :label="3">3列</el-radio-button>
+          <el-radio-button :label="4">4列</el-radio-button>
+          <el-radio-button :label="5">5列</el-radio-button>
+          <el-radio-button :label="6">6列</el-radio-button>
+        </el-radio-group>
+      </div>
+    </div>
 
     <!-- ── 统计看板（动态，从字典读取配置） ── -->
-    <div class="widgets-grid" style="margin-bottom:20px">
+    <div class="widgets-grid" :style="gridStyle" style="margin-bottom:20px">
       <div
         v-for="w in activeWidgets"
         :key="w.code"
@@ -190,7 +202,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { projectApi, reportApi, downloadBlob, issueApi, riskApi } from '@/api'
 import { ElMessage } from 'element-plus'
@@ -211,6 +223,12 @@ const riskByProject = ref([])
 
 const TODAY = new Date()
 TODAY.setHours(0, 0, 0, 0)
+
+// ── 列数配置（localStorage 持久化） ────────────────────────────────
+const COLS_KEY = 'dashboard_grid_cols'
+const gridCols = ref(parseInt(localStorage.getItem(COLS_KEY) || '4', 10))
+watch(gridCols, v => localStorage.setItem(COLS_KEY, String(v)))
+const gridStyle = computed(() => ({ gridTemplateColumns: `repeat(${gridCols.value}, 1fr)` }))
 
 // ── 工具函数 ─────────────────────────────────────────
 function isOverdue(planDate, actualDate) {
@@ -375,10 +393,9 @@ async function downloadOverview() {
 <style scoped>
 .page-title { font-size: 20px; font-weight: 600; color: #2E4057; margin-bottom: 20px; }
 
-/* 看板网格：自适应宽度，每张最小 200px */
+/* 看板网格：列数由 gridCols 动态控制（通过 :style 绑定） */
 .widgets-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
   gap: 16px;
 }
 
