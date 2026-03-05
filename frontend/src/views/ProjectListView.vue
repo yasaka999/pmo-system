@@ -33,7 +33,7 @@
             style="width:100%"
             @change="filterProjects"
           >
-            <el-option v-for="s in statusOptions" :key="s.value" :label="s.label" :value="s.label" />
+            <el-option v-for="s in statusOptions" :key="s.value" :label="s.label" :value="s.value" />
           </el-select>
         </el-col>
         <el-col :span="6">
@@ -47,7 +47,7 @@
             style="width:100%"
             @change="filterProjects"
           >
-            <el-option v-for="p in phaseOptions" :key="p.value" :label="p.label" :value="p.label" />
+            <el-option v-for="p in phaseOptions" :key="p.value" :label="p.label" :value="p.value" />
           </el-select>
         </el-col>
         <el-col :span="5">
@@ -70,7 +70,13 @@
           <!-- 状态列（带 Tag） -->
           <el-table-column v-else-if="col.key === 'status'" :label="col.label" width="90">
             <template #default="{ row }">
-              <el-tag :type="statusType(row.status)" size="small">{{ row.status }}</el-tag>
+              <el-tag :type="statusType(row.status)" size="small">{{ statusLabel(row.status) }}</el-tag>
+            </template>
+          </el-table-column>
+          <!-- 阶段列（翻译显示） -->
+          <el-table-column v-else-if="col.key === 'phase'" :label="col.label" width="90">
+            <template #default="{ row }">
+              {{ phaseLabel(row.phase) }}
             </template>
           </el-table-column>
           <!-- 人天使用列（进度条） -->
@@ -135,7 +141,7 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="项目状态"><el-select v-model="form.status" style="width:100%">
-              <el-option v-for="s in statusOptions" :key="s.value" :label="s.label" :value="s.label" />
+              <el-option v-for="s in statusOptions" :key="s.value" :label="s.label" :value="s.value" />
             </el-select></el-form-item>
           </el-col>
         </el-row>
@@ -151,7 +157,7 @@
         <el-row :gutter="16">
           <el-col :span="12">
             <el-form-item label="项目阶段"><el-select v-model="form.phase" style="width:100%">
-              <el-option v-for="p in phaseOptions" :key="p.value" :label="p.label" :value="p.label" />
+              <el-option v-for="p in phaseOptions" :key="p.value" :label="p.label" :value="p.value" />
             </el-select></el-form-item>
           </el-col>
           <el-col :span="12">
@@ -292,8 +298,8 @@ const statusOptions = computed(() => dictStore.getOptions('project_status'))
 const phaseOptions = computed(() => dictStore.getOptions('project_phase'))
 
 const defaultForm = () => ({
-  code: '', name: '', client: '', manager: '', phase: '实施',
-  status: '正常', plan_start: null, plan_end: null, budget_mandays: 0, description: '',
+  code: '', name: '', client: '', manager: '', phase: 'ph_impl',
+  status: 'st_normal', plan_start: null, plan_end: null, budget_mandays: 0, description: '',
   contract_no: '', region: '',
   plan_delivery_date: null, actual_delivery_date: null,
   plan_initial_acceptance_date: null, actual_initial_acceptance_date: null,
@@ -380,9 +386,17 @@ async function deleteProject(id) {
 
 function statusType(s) {
   const item = dictStore.getDictItem('project_status', s)
-  return item.color || (
-    { '正常': 'success', '预警': 'warning', '延期': 'danger', '已完成': 'info', '暂停': '' }[s] || ''
-  )
+  return item.color || ''
+}
+
+function statusLabel(s) {
+  const item = dictStore.getDictItem('project_status', s)
+  return item.label || s
+}
+
+function phaseLabel(p) {
+  const item = dictStore.getDictItem('project_phase', p)
+  return item.label || p
 }
 
 onMounted(() => {
