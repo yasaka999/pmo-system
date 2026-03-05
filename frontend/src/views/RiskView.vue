@@ -21,7 +21,7 @@
         </el-table-column>
         <el-table-column prop="level" label="风险等级" width="100" align="center">
           <template #default="{ row }">
-            <span :class="`risk-${row.level}`" style="font-weight:600">{{ row.level || '-' }}</span>
+            <span :class="`risk-${getDictLabel('risk_level', row.level)}`" style="font-weight:600">{{ getDictLabel('risk_level', row.level) || '-' }}</span>
           </template>
         </el-table-column>
         <el-table-column prop="assignee" label="负责人" width="100" />
@@ -49,7 +49,7 @@
         <div class="m-card" v-for="row in risks" :key="row.id">
           <div class="m-card-header">
             <div class="m-card-title">{{ row.title }}</div>
-            <span :class="`risk-${row.level}`" style="font-weight:600;font-size:13px">{{ row.level || '-' }}</span>
+            <span :class="`risk-${getDictLabel('risk_level', row.level)}`" style="font-weight:600;font-size:13px">{{ getDictLabel('risk_level', row.level) || '-' }}</span>
           </div>
           <div class="m-card-body">
             <div class="m-field"><span class="m-field-label">状态</span>
@@ -104,7 +104,7 @@
           <el-col :span="24">
             <el-form-item label="风险等级">
               <div style="display:flex;align-items:center;height:32px">
-                <el-tag :type="riskLevelType(form.level)" size="large" effect="dark">{{ form.level || '-' }}</el-tag>
+                <el-tag :type="riskLevelType(getDictLabel('risk_level', form.level))" size="large" effect="dark">{{ getDictLabel('risk_level', form.level) || '-' }}</el-tag>
               </div>
             </el-form-item>
           </el-col>
@@ -138,6 +138,7 @@ const editId = ref(null)
 
 const probOptions = computed(() => dictStore.getOptions('risk_prob'))
 const impactOptions = computed(() => dictStore.getOptions('risk_impact'))
+const levelOptions = computed(() => dictStore.getOptions('risk_level'))
 const statusOptions = computed(() => dictStore.getOptions('risk_status'))
 
 // 字典值转中文标签
@@ -147,38 +148,26 @@ function getDictLabel(category, value) {
 }
 
 // 计算风险等级（根据概率和影响）
-// 兼容中英文两种格式的数据
+// 返回英文代码：rl_h(高), rl_m(中), rl_l(低)
 function calcRiskLevel() {
-  // 支持英文代码和中文两种格式
-  const probMap = { 
-    'rp_h': 3, '高': 3,
-    'rp_m': 2, '中': 2, 
-    'rp_l': 1, '低': 1
-  }
-  const impactMap = { 
-    'ri_h': 3, '高': 3,
-    'ri_m': 2, '中': 2, 
-    'ri_l': 1, '低': 1
-  }
+  const probMap = { 'rp_h': 3, 'rp_m': 2, 'rp_l': 1 }  // 高=3, 中=2, 低=1
+  const impactMap = { 'ri_h': 3, 'ri_m': 2, 'ri_l': 1 }
   
-  const probVal = form.value.probability || ''
-  const impactVal = form.value.impact || ''
-  
-  const probScore = probMap[probVal] || 0
-  const impactScore = impactMap[impactVal] || 0
+  const probScore = probMap[form.value.probability] || 0
+  const impactScore = impactMap[form.value.impact] || 0
   const totalScore = probScore * impactScore
   
   // 风险矩阵：得分 >= 6 为高，>= 2 为中，否则为低
   if (totalScore >= 6) {
-    form.value.level = '高'
+    form.value.level = 'rl_h'  // 高
   } else if (totalScore >= 2) {
-    form.value.level = '中'
+    form.value.level = 'rl_m'  // 中
   } else {
-    form.value.level = '低'
+    form.value.level = 'rl_l'  // 低
   }
 }
 
-const df = () => ({ title:'', probability:'rp_m', impact:'ri_m', level:'中', assignee:'', status:'rs_open', description:'', mitigation:'' })
+const df = () => ({ title:'', probability:'rp_m', impact:'ri_m', level:'rl_m', assignee:'', status:'rs_open', description:'', mitigation:'' })
 const form = ref(df())
 
 async function load() {
