@@ -78,21 +78,26 @@
       <el-form :model="form" label-width="90px">
         <el-form-item label="风险标题"><el-input v-model="form.title" /></el-form-item>
         <el-row :gutter="12">
-          <el-col :xs="24" :sm="8">
+          <el-col :xs="24" :sm="6">
             <el-form-item label="概率">
-              <el-select v-model="form.probability" style="width:100%">
+              <el-select v-model="form.probability" style="width:100%" @change="calcRiskLevel">
                 <el-option v-for="s in probOptions" :key="s.value" :label="s.label" :value="s.value" />
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :xs="24" :sm="8">
+          <el-col :xs="24" :sm="6">
             <el-form-item label="影响">
-              <el-select v-model="form.impact" style="width:100%">
+              <el-select v-model="form.impact" style="width:100%" @change="calcRiskLevel">
                 <el-option v-for="s in impactOptions" :key="s.value" :label="s.label" :value="s.value" />
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :xs="24" :sm="8">
+          <el-col :xs="24" :sm="6">
+            <el-form-item label="风险等级">
+              <el-input v-model="form.level" readonly style="width:100%; font-weight:600" :class="`risk-${form.level}`" />
+            </el-form-item>
+          </el-col>
+          <el-col :xs="24" :sm="6">
             <el-form-item label="状态">
               <el-select v-model="form.status" style="width:100%">
                 <el-option v-for="s in statusOptions" :key="s.value" :label="s.label" :value="s.value" />
@@ -137,7 +142,26 @@ function getDictLabel(category, value) {
   return item?.label || value
 }
 
-const df = () => ({ title:'', probability:'中', impact:'中', assignee:'', status:'开放', description:'', mitigation:'' })
+// 计算风险等级（根据概率和影响）
+function calcRiskLevel() {
+  const probMap = { 'rp_h': 3, 'rp_m': 2, 'rp_l': 1 }  // 高=3, 中=2, 低=1
+  const impactMap = { 'ri_h': 3, 'ri_m': 2, 'ri_l': 1 }
+  
+  const probScore = probMap[form.value.probability] || 0
+  const impactScore = impactMap[form.value.impact] || 0
+  const totalScore = probScore * impactScore
+  
+  // 风险矩阵：得分 >= 6 为高，>= 2 为中，否则为低
+  if (totalScore >= 6) {
+    form.value.level = '高'
+  } else if (totalScore >= 2) {
+    form.value.level = '中'
+  } else {
+    form.value.level = '低'
+  }
+}
+
+const df = () => ({ title:'', probability:'rp_m', impact:'ri_m', level:'中', assignee:'', status:'rs_open', description:'', mitigation:'' })
 const form = ref(df())
 
 async function load() {
@@ -147,6 +171,7 @@ async function load() {
 function openDialog(row = null) {
   editId.value = row?.id || null
   form.value = row ? { ...row } : df()
+  calcRiskLevel()  // 计算风险等级
   dlg.value = true
 }
 async function save() {
