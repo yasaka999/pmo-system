@@ -42,9 +42,7 @@ export const userApi = {
     create: (data) => api.post('/users/', data),
     update: (id, data) => api.put(`/users/${id}`, data),
     updateStatus: (id, isActive) => api.put(`/users/${id}/status`, { is_active: isActive }),
-    remove: (id) => api.delete(`/sys-dicts/${id}`),
-    batchSave: (items) => api.post("/sys-dicts/batch-save", { items }),
-}
+    remove: (id) => api.delete(`/users/${id}`),
     changePassword: (data) => api.put('/users/me/password', data),
 }
 
@@ -54,8 +52,7 @@ export const dictApi = {
     create: (data) => api.post('/sys-dicts/', data),
     update: (id, data) => api.put(`/sys-dicts/${id}`, data),
     remove: (id) => api.delete(`/sys-dicts/${id}`),
-    batchSave: (items) => api.post("/sys-dicts/batch-save", { items }),
-}
+    batchSave: (items) => api.post('/sys-dicts/batch-save', { items }),
 }
 
 // ─── 项目 ─────────────────────────────────────
@@ -64,9 +61,7 @@ export const projectApi = {
     get: (id) => api.get(`/projects/${id}`),
     create: (data) => api.post('/projects/', data),
     update: (id, data) => api.put(`/projects/${id}`, data),
-    remove: (id) => api.delete(`/sys-dicts/${id}`),
-    batchSave: (items) => api.post("/sys-dicts/batch-save", { items }),
-}
+    remove: (id) => api.delete(`/projects/${id}`),
 }
 
 // ─── 里程碑 ───────────────────────────────────
@@ -74,9 +69,7 @@ export const milestoneApi = {
     list: (pid) => api.get(`/projects/${pid}/milestones`),
     create: (pid, data) => api.post(`/projects/${pid}/milestones`, data),
     update: (id, data) => api.put(`/milestones/${id}`, data),
-    remove: (id) => api.delete(`/sys-dicts/${id}`),
-    batchSave: (items) => api.post("/sys-dicts/batch-save", { items }),
-}
+    remove: (id) => api.delete(`/milestones/${id}`),
 }
 
 // ─── 任务 ─────────────────────────────────────
@@ -84,9 +77,7 @@ export const taskApi = {
     list: (pid) => api.get(`/projects/${pid}/tasks`),
     create: (pid, data) => api.post(`/projects/${pid}/tasks`, data),
     update: (id, data) => api.put(`/tasks/${id}`, data),
-    remove: (id) => api.delete(`/sys-dicts/${id}`),
-    batchSave: (items) => api.post("/sys-dicts/batch-save", { items }),
-}
+    remove: (id) => api.delete(`/tasks/${id}`),
 }
 
 // ─── 问题 ─────────────────────────────────────
@@ -94,9 +85,7 @@ export const issueApi = {
     list: (pid, params) => api.get(`/projects/${pid}/issues`, { params }),
     create: (pid, data) => api.post(`/projects/${pid}/issues`, data),
     update: (id, data) => api.put(`/issues/${id}`, data),
-    remove: (id) => api.delete(`/sys-dicts/${id}`),
-    batchSave: (items) => api.post("/sys-dicts/batch-save", { items }),
-}
+    remove: (id) => api.delete(`/issues/${id}`),
 }
 
 // ─── 风险 ─────────────────────────────────────
@@ -104,9 +93,7 @@ export const riskApi = {
     list: (pid, params) => api.get(`/projects/${pid}/risks`, { params }),
     create: (pid, data) => api.post(`/projects/${pid}/risks`, data),
     update: (id, data) => api.put(`/risks/${id}`, data),
-    remove: (id) => api.delete(`/sys-dicts/${id}`),
-    batchSave: (items) => api.post("/sys-dicts/batch-save", { items }),
-}
+    remove: (id) => api.delete(`/risks/${id}`),
 }
 
 // ─── 人天 ─────────────────────────────────────
@@ -114,9 +101,7 @@ export const mandayApi = {
     list: (pid, params) => api.get(`/projects/${pid}/mandays`, { params }),
     create: (pid, data) => api.post(`/projects/${pid}/mandays`, data),
     update: (id, data) => api.put(`/mandays/${id}`, data),
-    remove: (id) => api.delete(`/sys-dicts/${id}`),
-    batchSave: (items) => api.post("/sys-dicts/batch-save", { items }),
-}
+    remove: (id) => api.delete(`/mandays/${id}`),
     stats: (pid) => api.get(`/projects/${pid}/mandays/stats`),
 }
 

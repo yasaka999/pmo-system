@@ -114,19 +114,62 @@
           </div>
         </el-tab-pane>
 
+        <!-- ── 看板设置 ── -->
+        <el-tab-pane label="看板设置" name="widgets">
+          <div class="section-group">
+            <h3 class="section-title">总览看板卡片配置</h3>
+            <p class="section-desc" style="margin-bottom:16px">
+              控制项目总览页面显示哪些点击看板。开关控制显示/隐藏，按面按针调整顺序。保存后刷新总览页即可生效。
+            </p>
+            <div class="widget-config-list">
+              <div
+                v-for="(w, idx) in widgetItems"
+                :key="w.code"
+                class="widget-config-row"
+              >
+                <span class="widget-order">{{ idx + 1 }}</span>
+                <span class="widget-name">{{ w.label }}</span>
+                <div class="widget-actions">
+                  <el-switch
+                    v-model="w.is_active"
+                    :active-text="w.is_active ? '显示' : '隐藏'"
+                    style="margin-right:12px"
+                  />
+                  <el-button-group size="small">
+                    <el-button :disabled="idx === 0" @click="moveWidget(idx, -1)">↑</el-button>
+                    <el-button :disabled="idx === widgetItems.length - 1" @click="moveWidget(idx, 1)">↓</el-button>
+                  </el-button-group>
+                </div>
+              </div>
+            </div>
+          </div>
+        </el-tab-pane>
+
       </el-tabs>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { dictApi } from '@/api'
 import { ElMessage } from 'element-plus'
 import ConfigSection from '@/components/ConfigSection.vue'
 
 const activeTab = ref('project')
 const saving = ref(false)
+
+// 看板配置项（dashboard_widget 分类）
+const WIDGET_LABELS = {
+  total: '项目总数', in_progress: '进行中', done: '已完成',
+  open_issues: '未关闭问题', open_risks: '开放风险',
+  pending_delivery: '待交付', delivered: '已交付',
+  pending_acceptance: '待验收', accepted: '已验收',
+  status_normal: '状态：正常', status_warning: '状态：预警',
+  status_delayed: '状态：延期', status_paused: '状态：暂停',
+  status_done: '状态：已完成',
+}
+const widgetItems = reactive([])   // { id, code, label, is_active, sort_order }
 
 // 所有字典项的扁平列表（响应式）
 // 每条记录附加 _deleted / _new 标记，不直接修改后端，点"保存"时批量提交
@@ -136,6 +179,15 @@ onMounted(async () => {
   try {
     const data = await dictApi.list()
     allItems.splice(0, allItems.length, ...data.map(d => ({ ...d, _deleted: false, _new: false })))
+    // 单独提取 widget 配置，按 sort_order 排序
+    const ws = data.filter(d => d.category === 'dashboard_widget')
+      .sort((a, b) => a.sort_order - b.sort_order)
+    widgetItems.splice(0, widgetItems.length, ...ws.map(w => ({
+      id: w.id, code: w.code,
+      label: WIDGET_LABELS[w.code] || w.label,
+      is_active: w.is_active,
+      sort_order: w.sort_order,
+    })))
   } catch (e) {
     ElMessage.error('加载配置失败')
   }
@@ -172,13 +224,23 @@ function removeItem(item) {
   }
 }
 
+function moveWidget(idx, dir) {
+  const newIdx = idx + dir
+  if (newIdx < 0 || newIdx >= widgetItems.length) return
+  const tmp = widgetItems[idx]
+  widgetItems[idx] = widgetItems[newIdx]
+  widgetItems[newIdx] = tmp
+  // 重新赋值 sort_order
+  widgetItems.forEach((w, i) => { w.sort_order = i + 1 })
+}
+
 async function saveAll() {
   saving.value = true
   try {
-    // 收集所有变更项
-    const changedItems = allItems
-      .filter(d => d._deleted || d._new || d.id)
-      .map(d => ({
+    // 收集所有变更项（包括看板配置）
+    const changedItems = [
+      // 字典项
+      ...allItems.filter(d => d._deleted || d._new || d.id).map(d => ({
         id: d.id,
         category: d.category,
         code: d.code,
@@ -187,7 +249,19 @@ async function saveAll() {
         color: d.color,
         is_active: d.is_active,
         _deleted: d._deleted
+      })),
+      // 看板配置
+      ...widgetItems.map(w => ({
+        id: w.id,
+        category: 'dashboard_widget',
+        code: w.code,
+        label: w.label,
+        sort_order: w.sort_order,
+        color: '',
+        is_active: w.is_active,
+        _deleted: false
       }))
+    ]
     
     // 一次请求完成所有操作
     const result = await dictApi.batchSave(changedItems)
@@ -208,7 +282,6 @@ async function saveAll() {
   } finally {
     saving.value = false
   }
-}
 }
 </script>
 
@@ -240,4 +313,34 @@ async function saveAll() {
 .section-group {
   padding: 4px 0;
 }
+
+/* 看板设置列表 */
+.section-title { font-size: 16px; font-weight: 600; color: #2E4057; margin: 0 0 4px 0; }
+.section-desc  { font-size: 12px; color: #999; margin: 0; }
+.widget-config-list { display: flex; flex-direction: column; gap: 0; }
+.widget-config-row {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  border-radius: 8px;
+  transition: background .15s;
+  gap: 12px;
+}
+.widget-config-row:hover { background: #f8fafd; }
+.widget-order {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #e8edf8;
+  color: #4472C4;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.widget-name { flex: 1; font-size: 14px; font-weight: 500; color: #303133; }
+.widget-actions { display: flex; align-items: center; }
 </style>
