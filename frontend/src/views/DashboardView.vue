@@ -63,7 +63,12 @@
           </el-table-column>
           <el-table-column v-else-if="col.key === 'status'" :label="col.label" width="90">
             <template #default="{ row }">
-              <el-tag :type="statusType(row.status)" size="small">{{ row.status }}</el-tag>
+              <el-tag :type="statusType(row.status)" size="small">{{ statusLabel(row.status) }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column v-else-if="col.key === 'phase'" :label="col.label" width="80">
+            <template #default="{ row }">
+              {{ phaseLabel(row.phase) }}
             </template>
           </el-table-column>
           <el-table-column v-else-if="col.key === 'mandays'" :label="col.label" width="120" align="center">
@@ -102,7 +107,7 @@
             <el-table-column prop="manager" label="项目经理" width="100" />
             <el-table-column prop="status" label="状态" width="80">
               <template #default="{ row }">
-                <el-tag :type="statusType(row.status)" size="small">{{ row.status }}</el-tag>
+                <el-tag :type="statusType(row.status)" size="small">{{ statusLabel(row.status) }}</el-tag>
               </template>
             </el-table-column>
             <el-table-column label="交付日期" width="100">
@@ -202,6 +207,14 @@ import { useDictStore } from '@/stores/dict'
 
 const router = useRouter()
 const dictStore = useDictStore()
+
+// ── 字典转换函数 ─────────────────────────────────────────
+function statusLabel(s) {
+  return dictStore.getDictItem('project_status', s).label || s
+}
+function phaseLabel(p) {
+  return dictStore.getDictItem('project_phase', p).label || p
+}
 
 const projects = ref([])
 const loading = ref(false)
