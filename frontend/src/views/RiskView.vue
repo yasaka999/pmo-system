@@ -78,30 +78,34 @@
       <el-form :model="form" label-width="90px">
         <el-form-item label="风险标题"><el-input v-model="form.title" /></el-form-item>
         <el-row :gutter="12">
-          <el-col :xs="24" :sm="6">
+          <el-col :xs="24" :sm="8">
             <el-form-item label="概率">
               <el-select v-model="form.probability" style="width:100%" @change="calcRiskLevel">
                 <el-option v-for="s in probOptions" :key="s.value" :label="s.label" :value="s.value" />
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :xs="24" :sm="6">
+          <el-col :xs="24" :sm="8">
             <el-form-item label="影响">
               <el-select v-model="form.impact" style="width:100%" @change="calcRiskLevel">
                 <el-option v-for="s in impactOptions" :key="s.value" :label="s.label" :value="s.value" />
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :xs="24" :sm="6">
-            <el-form-item label="风险等级">
-              <el-input v-model="form.level" readonly style="width:100%; font-weight:600" :class="`risk-${form.level}`" />
-            </el-form-item>
-          </el-col>
-          <el-col :xs="24" :sm="6">
+          <el-col :xs="24" :sm="8">
             <el-form-item label="状态">
               <el-select v-model="form.status" style="width:100%">
                 <el-option v-for="s in statusOptions" :key="s.value" :label="s.label" :value="s.value" />
               </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="12">
+          <el-col :span="24">
+            <el-form-item label="风险等级">
+              <div style="display:flex;align-items:center;height:32px">
+                <el-tag :type="riskLevelType(form.level)" size="large" effect="dark">{{ form.level || '-' }}</el-tag>
+              </div>
             </el-form-item>
           </el-col>
         </el-row>
@@ -143,12 +147,25 @@ function getDictLabel(category, value) {
 }
 
 // 计算风险等级（根据概率和影响）
+// 兼容中英文两种格式的数据
 function calcRiskLevel() {
-  const probMap = { 'rp_h': 3, 'rp_m': 2, 'rp_l': 1 }  // 高=3, 中=2, 低=1
-  const impactMap = { 'ri_h': 3, 'ri_m': 2, 'ri_l': 1 }
+  // 支持英文代码和中文两种格式
+  const probMap = { 
+    'rp_h': 3, '高': 3,
+    'rp_m': 2, '中': 2, 
+    'rp_l': 1, '低': 1
+  }
+  const impactMap = { 
+    'ri_h': 3, '高': 3,
+    'ri_m': 2, '中': 2, 
+    'ri_l': 1, '低': 1
+  }
   
-  const probScore = probMap[form.value.probability] || 0
-  const impactScore = impactMap[form.value.impact] || 0
+  const probVal = form.value.probability || ''
+  const impactVal = form.value.impact || ''
+  
+  const probScore = probMap[probVal] || 0
+  const impactScore = impactMap[impactVal] || 0
   const totalScore = probScore * impactScore
   
   // 风险矩阵：得分 >= 6 为高，>= 2 为中，否则为低
@@ -184,8 +201,14 @@ async function remove(id) {
   await riskApi.remove(id); ElMessage.success('已删除'); await load()
 }
 function riskStatusType(s) {
-  const c = dictStore.getDictItem('risk_status', s).color
-  return c || { '开放': 'danger', '已缓解': 'warning', '已关闭': 'success' }[s] || ''
+  const item = dictStore.getDictItem('risk_status', s)
+  const c = item?.color
+  return c || { 'rs_open': 'danger', 'rs_mitig': 'warning', 'rs_closed': 'success', '开放': 'danger', '已缓解': 'warning', '已关闭': 'success' }[s] || 'info'
+}
+
+function riskLevelType(level) {
+  const map = { '高': 'danger', '中': 'warning', '低': 'success' }
+  return map[level] || 'info'
 }
 
 onMounted(() => { dictStore.fetchDicts(); load() })
