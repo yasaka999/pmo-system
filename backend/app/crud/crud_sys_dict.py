@@ -43,27 +43,33 @@ def batch_save_sys_dicts(db: Session, items: list):
     """
     print(f"=== batch_save received {len(items)} items ===")
     for item in items:
-        if item.get('deleted'):
-            print(f"Item marked for deletion: id={item.get('id')}, deleted={item.get('deleted')}, category={item.get('category')}, code={item.get('code')}, label={item.get('label')}")
+        # 支持 _deleted 或 deleted 字段
+        is_deleted = item.get('_deleted') or item.get('deleted')
+        if is_deleted:
+            print(f"Item marked for deletion: id={item.get('id')}, _deleted={item.get('_deleted')}, deleted={item.get('deleted')}, category={item.get('category')}, code={item.get('code')}, label={item.get('label')}")
     
     created = 0
     updated = 0
     deleted_count = 0
     
     for item in items:
-        print(f"Processing item: id={item.get('id')}, deleted={item.get('deleted')}, category={item.get('category')}, code={item.get('code')}")
-        if item.get('deleted') and item.get('id'):
+        # 支持 _deleted 或 deleted 字段
+        is_deleted = item.get('_deleted') or item.get('deleted')
+        item_id = item.get('id')
+        print(f"Processing item: id={item_id}, _deleted={item.get('_deleted')}, deleted={item.get('deleted')}, is_deleted={is_deleted}, category={item.get('category')}, code={item.get('code')}")
+        
+        if is_deleted and item_id:
             # 删除
-            db_dict = get_sys_dict(db, item['id'])
+            db_dict = get_sys_dict(db, item_id)
             if db_dict:
                 db.delete(db_dict)
                 deleted_count += 1
-                print(f"Deleted item id={item['id']}")
-        elif item.get('deleted'):
+                print(f"Deleted item id={item_id}")
+        elif is_deleted:
             # 新增但被标记删除，跳过
             print("Skipping: new item marked for deletion")
             continue
-        elif not item.get('id'):
+        elif not item_id:
             # 新增
             db_dict = SysDict(
                 category=item['category'],
@@ -78,7 +84,7 @@ def batch_save_sys_dicts(db: Session, items: list):
             print(f"Created item: {item['code']}")
         else:
             # 更新
-            db_dict = get_sys_dict(db, item['id'])
+            db_dict = get_sys_dict(db, item_id)
             if db_dict:
                 db_dict.category = item['category']
                 db_dict.code = item['code']
@@ -87,7 +93,7 @@ def batch_save_sys_dicts(db: Session, items: list):
                 db_dict.color = item.get('color')
                 db_dict.is_active = item.get('is_active', True)
                 updated += 1
-                print(f"Updated item id={item['id']}")
+                print(f"Updated item id={item_id}")
     
     db.commit()
     print(f"=== batch_save result: created={created}, updated={updated}, deleted={deleted_count} ===")
