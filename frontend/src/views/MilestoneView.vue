@@ -178,7 +178,18 @@ async function deleteMilestone(id) {
 function openTaskDialog(msId, task = null) {
   currentMsId.value = msId
   editTaskId.value = task?.id || null
-  taskForm.value = task ? { ...task } : { name:'', assignee:'', plan_start:null, plan_end:null, status:'未开始', progress:0, notes:'' }
+  if (task) {
+    // 确保日期字段格式正确，空字符串转为 null
+    taskForm.value = {
+      ...task,
+      plan_start: task.plan_start || null,
+      plan_end: task.plan_end || null,
+      actual_start: task.actual_start || null,
+      actual_end: task.actual_end || null
+    }
+  } else {
+    taskForm.value = { name:'', assignee:'', plan_start:null, plan_end:null, status:'未开始', progress:0, notes:'' }
+  }
   taskDlg.value = true
 }
 
