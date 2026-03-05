@@ -66,9 +66,9 @@
               <el-tag :type="statusType(row.status)" size="small">{{ statusLabel(row.status) }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column v-else-if="col.key === 'phase'" :label="col.label" width="80">
+          <el-table-column v-else-if="col.key === 'phase'" :label="col.label" width="90">
             <template #default="{ row }">
-              {{ phaseLabel(row.phase) }}
+              <el-tag :type="phaseType(row.phase)" size="small">{{ phaseLabel(row.phase) }}</el-tag>
             </template>
           </el-table-column>
           <el-table-column v-else-if="col.key === 'mandays'" :label="col.label" width="120" align="center">
@@ -414,7 +414,28 @@ function goProject(id) {
 }
 
 function statusType(s) {
-  return { '正常': 'success', '预警': 'warning', '延期': 'danger', '已完成': 'info', '暂停': '' }[s] || ''
+  const item = dictStore.getDictItem('project_status', s)
+  // 将颜色转换为 el-tag 的 type: success/warning/danger/info
+  const colorMap = {
+    '#67C23A': 'success',
+    '#E6A23C': 'warning',
+    '#F56C6C': 'danger',
+    '#909399': 'info',
+    '#409EFF': '',
+  }
+  return colorMap[item.color] || ''
+}
+
+function phaseType(p) {
+  const item = dictStore.getDictItem('project_phase', p)
+  const colorMap = {
+    '#409EFF': '',        // 蓝色 - 默认
+    '#67C23A': 'success', // 绿色
+    '#E6A23C': 'warning', // 橙色
+    '#F56C6C': 'danger',  // 红色
+    '#909399': 'info',    // 灰色
+  }
+  return colorMap[item.color] || ''
 }
 
 onMounted(async () => {

@@ -9,9 +9,9 @@
         <el-descriptions-item label="客户/甲方">{{ project.client || '-' }}</el-descriptions-item>
         <el-descriptions-item label="项目经理">{{ project.manager || '-' }}</el-descriptions-item>
         <el-descriptions-item label="预算人天">{{ project.budget_mandays }} 天</el-descriptions-item>
-        <el-descriptions-item label="项目阶段">{{ project.phase }}</el-descriptions-item>
+        <el-descriptions-item label="项目阶段">{{ phaseLabel(project.phase) }}</el-descriptions-item>
         <el-descriptions-item label="项目状态">
-          <el-tag :type="statusType(project.status)">{{ project.status }}</el-tag>
+          <el-tag :type="statusType(project.status)">{{ statusLabel(project.status) }}</el-tag>
         </el-descriptions-item>
         <el-descriptions-item label=""> </el-descriptions-item>
         <el-descriptions-item label="计划开始">{{ project.plan_start || '-' }}</el-descriptions-item>
@@ -65,6 +65,17 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { projectApi, milestoneApi, taskApi } from '@/api'
 import GanttChart from '@/components/GanttChart.vue'
+import { useDictStore } from '@/stores/dict'
+
+const dictStore = useDictStore()
+
+// ── 字典转换函数 ─────────────────────────────────────────
+function statusLabel(s) {
+  return dictStore.getDictItem('project_status', s).label || s
+}
+function phaseLabel(p) {
+  return dictStore.getDictItem('project_phase', p).label || p
+}
 
 const route = useRoute()
 const id = route.params.id
