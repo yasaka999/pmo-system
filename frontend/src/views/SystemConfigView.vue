@@ -216,11 +216,16 @@ function addItem(category, label) {
 }
 
 function removeItem(item) {
-  if (item._new) {
-    const idx = allItems.findIndex(d => d === item)
-    if (idx > -1) allItems.splice(idx, 1)
+  const idx = allItems.findIndex(d => d.id === item.id || (d.code === item.code && d.category === item.category))
+  if (idx === -1) return
+  
+  if (allItems[idx]._new) {
+    // 新增项直接移除
+    allItems.splice(idx, 1)
   } else {
-    item._deleted = true
+    // 已有项标记为删除
+    allItems[idx]._deleted = true
+    console.log('标记删除:', allItems[idx])
   }
 }
 
