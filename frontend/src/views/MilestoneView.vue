@@ -100,10 +100,10 @@
         <el-form-item label="负责人"><el-input v-model="taskForm.assignee" /></el-form-item>
         <el-row :gutter="12">
           <el-col :span="12">
-            <el-form-item label="计划开始"><el-date-picker v-model="taskForm.plan_start" type="date" value-format="YYYY-MM-DD" style="width:100%" /></el-form-item>
+            <el-form-item label="计划开始"><el-date-picker v-model="taskForm.plan_start" type="date" style="width:100%" /></el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="计划结束"><el-date-picker v-model="taskForm.plan_end" type="date" value-format="YYYY-MM-DD" style="width:100%" /></el-form-item>
+            <el-form-item label="计划结束"><el-date-picker v-model="taskForm.plan_end" type="date" style="width:100%" /></el-form-item>
           </el-col>
         </el-row>
         <el-form-item label="状态">
@@ -175,17 +175,24 @@ async function deleteMilestone(id) {
   await milestoneApi.remove(id); ElMessage.success('已删除'); await load()
 }
 
+function parseDate(d) {
+  if (!d) return null
+  if (d instanceof Date) return d
+  // String to Date
+  return new Date(d)
+}
+
 function openTaskDialog(msId, task = null) {
   currentMsId.value = msId
   editTaskId.value = task?.id || null
   if (task) {
-    // 确保日期字段格式正确，空字符串转为 null
+    // 将字符串日期转换为 Date 对象供 el-date-picker 使用
     taskForm.value = {
       ...task,
-      plan_start: task.plan_start || null,
-      plan_end: task.plan_end || null,
-      actual_start: task.actual_start || null,
-      actual_end: task.actual_end || null
+      plan_start: parseDate(task.plan_start),
+      plan_end: parseDate(task.plan_end),
+      actual_start: parseDate(task.actual_start),
+      actual_end: parseDate(task.actual_end)
     }
   } else {
     taskForm.value = { name:'', assignee:'', plan_start:null, plan_end:null, status:'未开始', progress:0, notes:'' }
@@ -193,9 +200,24 @@ function openTaskDialog(msId, task = null) {
   taskDlg.value = true
 }
 
+function formatDate(d) {
+  if (!d) return null
+  if (typeof d === 'string') return d
+  // Date object to YYYY-MM-DD
+  return d.toISOString().split('T')[0]
+}
+
 async function saveTask() {
   if (!taskForm.value.name) { ElMessage.warning('任务名称必填'); return }
-  const data = { ...taskForm.value, milestone_id: currentMsId.value, project_id: Number(pid) }
+  const data = { 
+    ...taskForm.value, 
+    plan_start: formatDate(taskForm.value.plan_start),
+    plan_end: formatDate(taskForm.value.plan_end),
+    actual_start: formatDate(taskForm.value.actual_start),
+    actual_end: formatDate(taskForm.value.actual_end),
+    milestone_id: currentMsId.value, 
+    project_id: Number(pid) 
+  }
   if (editTaskId.value) await taskApi.update(editTaskId.value, data)
   else await taskApi.create(pid, data)
   ElMessage.success('保存成功'); taskDlg.value = false; await load()
