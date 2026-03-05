@@ -319,7 +319,7 @@ class SysDictBatchItem(BaseModel):
     sort_order: int = 0
     color: Optional[str] = None
     is_active: bool = True
-    _deleted: bool = False  # Mark for deletion
+    deleted: bool = False  # Mark for deletion
 
 class SysDictBatchSave(BaseModel):
     items: List[SysDictBatchItem]
