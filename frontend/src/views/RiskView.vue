@@ -9,17 +9,25 @@
     <div class="page-card hide-mobile">
       <el-table :data="risks" stripe border v-loading="loading" style="width:100%">
         <el-table-column prop="title" label="风险标题" min-width="200" />
-        <el-table-column prop="probability" label="概率" width="80" align="center" />
-        <el-table-column prop="impact" label="影响" width="80" align="center" />
+        <el-table-column prop="probability" label="概率" width="80" align="center">
+          <template #default="{ row }">
+            {{ getDictLabel('risk_prob', row.probability) }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="impact" label="影响" width="80" align="center">
+          <template #default="{ row }">
+            {{ getDictLabel('risk_impact', row.impact) }}
+          </template>
+        </el-table-column>
         <el-table-column prop="level" label="风险等级" width="100" align="center">
           <template #default="{ row }">
-            <span :class="`risk-${row.level}`" style="font-weight:600">{{ row.level || '-' }}</span>
+            <span :class="`risk-${row.level}`" style="font-weight:600">{{ getDictLabel('risk_level', row.level) || row.level || '-' }}</span>
           </template>
         </el-table-column>
         <el-table-column prop="assignee" label="负责人" width="100" />
         <el-table-column prop="status" label="状态" width="90">
           <template #default="{ row }">
-            <el-tag :type="riskStatusType(row.status)" size="small">{{ row.status }}</el-tag>
+            <el-tag :type="riskStatusType(row.status)" size="small">{{ getDictLabel('risk_status', row.status) }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="mitigation" label="应对措施" min-width="180" show-overflow-tooltip />
@@ -41,15 +49,15 @@
         <div class="m-card" v-for="row in risks" :key="row.id">
           <div class="m-card-header">
             <div class="m-card-title">{{ row.title }}</div>
-            <span :class="`risk-${row.level}`" style="font-weight:600;font-size:13px">{{ row.level || '-' }}</span>
+            <span :class="`risk-${row.level}`" style="font-weight:600;font-size:13px">{{ getDictLabel('risk_level', row.level) || row.level || '-' }}</span>
           </div>
           <div class="m-card-body">
             <div class="m-field"><span class="m-field-label">状态</span>
-              <el-tag :type="riskStatusType(row.status)" size="small">{{ row.status }}</el-tag>
+              <el-tag :type="riskStatusType(row.status)" size="small">{{ getDictLabel('risk_status', row.status) }}</el-tag>
             </div>
             <div class="m-field"><span class="m-field-label">负责人</span><span class="m-field-value">{{ row.assignee || '-' }}</span></div>
-            <div class="m-field"><span class="m-field-label">概率</span><span class="m-field-value">{{ row.probability }}</span></div>
-            <div class="m-field"><span class="m-field-label">影响</span><span class="m-field-value">{{ row.impact }}</span></div>
+            <div class="m-field"><span class="m-field-label">概率</span><span class="m-field-value">{{ getDictLabel('risk_prob', row.probability) }}</span></div>
+            <div class="m-field"><span class="m-field-label">影响</span><span class="m-field-value">{{ getDictLabel('risk_impact', row.impact) }}</span></div>
             <div class="m-field" style="grid-column:1/-1">
               <span class="m-field-label">应对措施</span>
               <span class="m-field-value" style="white-space:pre-wrap">{{ row.mitigation || '-' }}</span>
@@ -122,6 +130,12 @@ const editId = ref(null)
 const probOptions = computed(() => dictStore.getOptions('risk_prob'))
 const impactOptions = computed(() => dictStore.getOptions('risk_impact'))
 const statusOptions = computed(() => dictStore.getOptions('risk_status'))
+
+// 字典值转中文标签
+function getDictLabel(category, value) {
+  const item = dictStore.getDictItem(category, value)
+  return item?.label || value
+}
 
 const df = () => ({ title:'', probability:'中', impact:'中', assignee:'', status:'开放', description:'', mitigation:'' })
 const form = ref(df())
