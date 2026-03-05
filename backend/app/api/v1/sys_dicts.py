@@ -89,7 +89,14 @@ def batch_save_sys_dicts(
         raise HTTPException(status_code=403, detail="没有权限执行此操作")
     
     items = [item.model_dump() for item in data.items]
+    print(f"=== API received {len(items)} items ===")
+    for item in items:
+        if item.get('deleted'):
+            print(f"API: Item marked for deletion: {item}")
+    
     created, updated, deleted = crud_sys_dict.batch_save_sys_dicts(db, items)
+    
+    print(f"=== API result: created={created}, updated={updated}, deleted={deleted} ===")
     
     return {
         "message": "保存成功",

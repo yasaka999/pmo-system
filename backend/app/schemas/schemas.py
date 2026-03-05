@@ -319,7 +319,12 @@ class SysDictBatchItem(BaseModel):
     sort_order: int = 0
     color: Optional[str] = None
     is_active: bool = True
-    deleted: bool = False  # Mark for deletion
+    deleted: Optional[bool] = None  # Mark for deletion (accepts _deleted from frontend)
+    
+    model_config = {
+        'populate_by_name': True,
+        'extra': 'allow'  # Allow extra fields like _deleted
+    }
 
 class SysDictBatchSave(BaseModel):
     items: List[SysDictBatchItem]

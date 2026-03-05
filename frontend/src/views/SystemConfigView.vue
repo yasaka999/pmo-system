@@ -242,19 +242,32 @@ function moveWidget(idx, dir) {
 async function saveAll() {
   saving.value = true
   try {
+    // 调试：打印 allItems 中的删除项
+    const markedForDelete = allItems.filter(d => d._deleted)
+    console.log('allItems 中标记删除的项:', markedForDelete)
+    console.log('删除项的 _deleted 值:', markedForDelete.map(d => ({ id: d.id, label: d.label, _deleted: d._deleted, type: typeof d._deleted })))
+    
     // 收集所有变更项（包括看板配置）
     const changedItems = [
       // 字典项
-      ...allItems.filter(d => d._deleted || d._new || d.id).map(d => ({
-        id: d.id,
-        category: d.category,
-        code: d.code,
-        label: d.label,
-        sort_order: d.sort_order,
-        color: d.color,
-        is_active: d.is_active,
-        deleted: d._deleted || false
-      })),
+      ...allItems.filter(d => d._deleted || d._new || d.id).map(d => {
+        // 使用 JSON 序列化确保响应式值被正确提取
+        const raw = JSON.parse(JSON.stringify(d))
+        const item = {
+          id: raw.id,
+          category: raw.category,
+          code: raw.code,
+          label: raw.label,
+          sort_order: raw.sort_order,
+          color: raw.color || '',
+          is_active: raw.is_active,
+          _deleted: raw._deleted === true
+        }
+        if (raw._deleted) {
+          console.log('✅ 映射删除项:', { id: item.id, label: item.label, _deleted: item._deleted }, '原始:', { _deleted: raw._deleted, type: typeof raw._deleted })
+        }
+        return item
+      }),
       // 看板配置
       ...widgetItems.map(w => ({
         id: w.id,
@@ -264,13 +277,14 @@ async function saveAll() {
         sort_order: w.sort_order,
         color: '',
         is_active: w.is_active,
-        deleted: false
+        _deleted: false
       }))
     ]
     
     // 调试：打印删除项
-    const deletedItems = changedItems.filter(d => d.deleted)
-    console.log('准备删除的项:', deletedItems)
+    const deletedItems = changedItems.filter(d => d._deleted)
+    console.log('准备删除的项:', JSON.stringify(deletedItems, null, 2))
+    console.log('所有发送的项:', JSON.stringify(changedItems, null, 2))
     
     // 一次请求完成所有操作
     const result = await dictApi.batchSave(changedItems)
