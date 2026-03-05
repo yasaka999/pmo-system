@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS deck (
     id          TEXT PRIMARY KEY,
     youtube_url TEXT NOT NULL,
     title       TEXT,
+    thumbnail   TEXT,
     lang_cd     TEXT DEFAULT 'en',
     status      TEXT DEFAULT 'pending',
     progress    INTEGER DEFAULT 0,
@@ -23,6 +24,7 @@ CREATE TABLE IF NOT EXISTS segment (
     seg_index   INTEGER NOT NULL,
     audio_path  TEXT NOT NULL,
     sentence    TEXT,
+    words       TEXT,
     start_ms    INTEGER,
     end_ms      INTEGER,
     created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -34,6 +36,11 @@ CREATE TABLE IF NOT EXISTS task (
     status      TEXT DEFAULT 'pending',
     created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
 );
+"""
+
+MIGRATE_SQL = """
+ALTER TABLE deck ADD COLUMN thumbnail TEXT;
+ALTER TABLE segment ADD COLUMN words TEXT;
 """
 
 
@@ -51,3 +58,17 @@ async def init_db():
     async with aiosqlite.connect(DB_PATH) as db:
         await db.executescript(CREATE_SQL)
         await db.commit()
+        
+        # 尝试添加 thumbnail 列（如果不存在）
+        try:
+            await db.execute("ALTER TABLE deck ADD COLUMN thumbnail TEXT")
+            await db.commit()
+        except:
+            pass  # 列已存在
+        
+        # 尝试添加 words 列（如果不存在）
+        try:
+            await db.execute("ALTER TABLE segment ADD COLUMN words TEXT")
+            await db.commit()
+        except:
+            pass  # 列已存在

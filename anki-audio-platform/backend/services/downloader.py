@@ -55,6 +55,7 @@ def download_audio_and_subtitle(youtube_url: str, deck_id: str, lang: str = "en"
         {
             "audio_path": "/path/to/audio.mp3",
             "subtitle_path": "/path/to/subtitle.vtt",  # 可能为 None
+            "thumbnail_path": "/path/to/thumbnail.jpg",  # 可能为 None
             "title": "视频标题",
             "lang": "en"
         }
@@ -73,7 +74,7 @@ def download_audio_and_subtitle(youtube_url: str, deck_id: str, lang: str = "en"
     env = os.environ.copy()
     env["PATH"] = f"{DENO_PATH}:{os.path.dirname(FFMPEG_PATH)}:{env.get('PATH', '')}"
 
-    # 第一步：获取视频信息（标题）
+    # 第一步：获取视频信息（标题、缩略图）
     info_cmd = [
         YTDLP_PATH,
         "--dump-json",
@@ -84,10 +85,23 @@ def download_audio_and_subtitle(youtube_url: str, deck_id: str, lang: str = "en"
     logger.info(f"[{deck_id}] 获取视频信息: {youtube_url}")
     result = subprocess.run(info_cmd, capture_output=True, text=True, timeout=60, env=env)
     title = "Unknown"
+    thumbnail_url = None
     if result.returncode == 0:
         try:
             info = json.loads(result.stdout)
             title = info.get("title", "Unknown")
+            # 获取最高质量的缩略图
+            thumbnails = info.get("thumbnails", [])
+            if thumbnails:
+                # 优先选择中等尺寸的缩略图
+                for t in thumbnails:
+                    if t.get("width", 0) >= 320:
+                        thumbnail_url = t.get("url")
+                        break
+                if not thumbnail_url and thumbnails:
+                    thumbnail_url = thumbnails[-1].get("url")
+            elif info.get("thumbnail"):
+                thumbnail_url = info.get("thumbnail")
         except Exception:
             pass
 
@@ -144,11 +158,23 @@ def download_audio_and_subtitle(youtube_url: str, deck_id: str, lang: str = "en"
     if subtitle_path is None:
         logger.warning(f"[{deck_id}] 未找到字幕文件，将无法切分片段")
 
-    logger.info(f"[{deck_id}] 下载完成 | 音频: {audio_path} | 字幕: {subtitle_path}")
+    # 第四步：下载缩略图
+    thumbnail_path = None
+    if thumbnail_url:
+        try:
+            import urllib.request
+            thumbnail_path = os.path.join(output_dir, "thumbnail.jpg")
+            urllib.request.urlretrieve(thumbnail_url, thumbnail_path)
+            logger.info(f"[{deck_id}] 下载缩略图: {thumbnail_path}")
+        except Exception as e:
+            logger.warning(f"[{deck_id}] 缩略图下载失败: {e}")
+
+    logger.info(f"[{deck_id}] 下载完成 | 音频: {audio_path} | 字幕: {subtitle_path} | 缩略图: {thumbnail_path}")
 
     return {
         "audio_path": audio_path,
         "subtitle_path": subtitle_path,
+        "thumbnail_path": thumbnail_path,
         "title": title,
         "lang": lang,
     }

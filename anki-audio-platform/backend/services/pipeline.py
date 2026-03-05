@@ -18,13 +18,23 @@ logger = logging.getLogger(__name__)
 
 
 async def _update_deck_status(deck_id: str, status: str, progress: int = 0,
-                               total: int = 0, error_msg: str = None, title: str = None):
+                               total: int = 0, error_msg: str = None, title: str = None, thumbnail: str = None):
     """更新牌组状态（写DB）"""
     async with aiosqlite.connect(DB_PATH) as db:
-        if title:
+        if title and thumbnail:
+            await db.execute(
+                "UPDATE deck SET status=?, progress=?, total=?, error_msg=?, title=?, thumbnail=? WHERE id=?",
+                (status, progress, total, error_msg, title, thumbnail, deck_id)
+            )
+        elif title:
             await db.execute(
                 "UPDATE deck SET status=?, progress=?, total=?, error_msg=?, title=? WHERE id=?",
                 (status, progress, total, error_msg, title, deck_id)
+            )
+        elif thumbnail:
+            await db.execute(
+                "UPDATE deck SET status=?, progress=?, total=?, error_msg=?, thumbnail=? WHERE id=?",
+                (status, progress, total, error_msg, thumbnail, deck_id)
             )
         else:
             await db.execute(
@@ -63,8 +73,9 @@ async def run_pipeline(task_id: str, deck_id: str, youtube_url: str, lang: str):
         title = download_result["title"]
         audio_path = download_result["audio_path"]
         subtitle_path = download_result["subtitle_path"]
+        thumbnail_path = download_result.get("thumbnail_path")
 
-        await _update_deck_status(deck_id, "processing", 0, 0, title=title)
+        await _update_deck_status(deck_id, "processing", 0, 0, title=title, thumbnail=thumbnail_path)
 
         # --- 步骤2：解析字幕 ---
         logger.info(f"[{deck_id}] Step2: 解析字幕")
