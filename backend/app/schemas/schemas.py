@@ -123,6 +123,7 @@ class ProjectSummary(BaseModel):
     manager: Optional[str] = None
     phase: str
     status: str
+    plan_start: Optional[date] = None
     plan_end: Optional[date] = None
     milestone_count: int = 0
     open_issue_count: int = 0
@@ -130,9 +131,14 @@ class ProjectSummary(BaseModel):
     used_mandays: float = 0
     budget_mandays: float = 0
     created_by: Optional[int] = None
+    # 合同 & 区域
+    contract_no: Optional[str] = None
+    region: Optional[str] = None
     # 交付 & 验收日期
     plan_delivery_date: Optional[date] = None
     actual_delivery_date: Optional[date] = None
+    plan_initial_acceptance_date: Optional[date] = None
+    actual_initial_acceptance_date: Optional[date] = None
     plan_final_acceptance_date: Optional[date] = None
     actual_final_acceptance_date: Optional[date] = None
     class Config:

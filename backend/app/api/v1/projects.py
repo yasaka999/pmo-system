@@ -34,13 +34,20 @@ def _build_summary(p: Project, db: Session) -> ProjectSummary:
     ms_count = db.query(func.count(Milestone.id)).filter(Milestone.project_id == p.id).scalar() or 0
     return ProjectSummary(
         id=p.id, code=p.code, name=p.name, client=p.client, manager=p.manager,
-        phase=p.phase, status=p.status, plan_end=p.plan_end,
+        phase=p.phase, status=p.status,
+        plan_start=p.plan_start, plan_end=p.plan_end,
         milestone_count=ms_count, open_issue_count=open_issues,
         open_risk_count=open_risks, used_mandays=used,
         budget_mandays=p.budget_mandays or 0,
         created_by=p.created_by,
+        # 合同 & 区域
+        contract_no=p.contract_no,
+        region=p.region,
+        # 交付 & 验收日期
         plan_delivery_date=p.plan_delivery_date,
         actual_delivery_date=p.actual_delivery_date,
+        plan_initial_acceptance_date=p.plan_initial_acceptance_date,
+        actual_initial_acceptance_date=p.actual_initial_acceptance_date,
         plan_final_acceptance_date=p.plan_final_acceptance_date,
         actual_final_acceptance_date=p.actual_final_acceptance_date,
     )
