@@ -90,6 +90,11 @@ DICT_DATA = [
     {"category": "risk_status", "code": "rs_mitig",  "label": "已缓解", "color": "warning", "sort_order": 2},
     {"category": "risk_status", "code": "rs_closed", "label": "已关闭", "color": "success", "sort_order": 3},
 
+    # ── 风险等级（根据概率和影响自动计算）───────
+    {"category": "risk_level", "code": "rl_h", "label": "高", "color": "danger",  "sort_order": 1},
+    {"category": "risk_level", "code": "rl_m", "label": "中", "color": "warning", "sort_order": 2},
+    {"category": "risk_level", "code": "rl_l", "label": "低", "color": "success", "sort_order": 3},
+
     # ── 看板卡片配置 ─────────────────────────
     # is_active 控制显示/隐藏，sort_order 控制排列顺序
     # label/color 字段不使用，仅 code 和 sort_order、is_active 有意义
