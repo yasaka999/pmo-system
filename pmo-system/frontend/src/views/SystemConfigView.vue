@@ -114,6 +114,37 @@
           </div>
         </el-tab-pane>
 
+        <!-- ── 看板设置 ── -->
+        <el-tab-pane label="看板设置" name="widgets">
+          <div class="section-group">
+            <h3 class="section-title">总览看板卡片配置</h3>
+            <p class="section-desc" style="margin-bottom:16px">
+              控制项目总览页面显示哪些卡片看板。开关控制显示/隐藏，按钮调整顺序。保存后刷新总览页即可生效。
+            </p>
+            <div class="widget-config-list">
+              <div
+                v-for="(w, idx) in widgetItems"
+                :key="w.code"
+                class="widget-config-row"
+              >
+                <span class="widget-order">{{ idx + 1 }}</span>
+                <span class="widget-name">{{ w.label }}</span>
+                <div class="widget-actions">
+                  <el-switch
+                    v-model="w.is_active"
+                    :active-text="w.is_active ? '显示' : '隐藏'"
+                    style="margin-right:12px"
+                  />
+                  <el-button-group size="small">
+                    <el-button :disabled="idx === 0" @click="moveWidget(idx, -1)">↑</el-button>
+                    <el-button :disabled="idx === widgetItems.length - 1" @click="moveWidget(idx, 1)">↓</el-button>
+                  </el-button-group>
+                </div>
+              </div>
+            </div>
+          </div>
+        </el-tab-pane>
+
       </el-tabs>
     </div>
   </div>
@@ -128,6 +159,15 @@ import ConfigSection from '@/components/ConfigSection.vue'
 const activeTab = ref('project')
 const saving = ref(false)
 
+// 看板配置项（dashboard_widget 分类）
+const WIDGET_LABELS = {
+  total: '项目总数', in_progress: '进行中', done: '已完成',
+  open_issues: '未关闭问题', open_risks: '开放风险',
+  pending_delivery: '待交付', delivered: '已交付',
+  pending_acceptance: '待验收', accepted: '已验收',
+}
+const widgetItems = reactive([])   // { id, code, label, is_active, sort_order }
+
 // 所有字典项的扁平列表（响应式）
 // 每条记录附加 _deleted / _new 标记，不直接修改后端，点"保存"时批量提交
 const allItems = reactive([])
@@ -136,6 +176,15 @@ onMounted(async () => {
   try {
     const data = await dictApi.list()
     allItems.splice(0, allItems.length, ...data.map(d => ({ ...d, _deleted: false, _new: false })))
+    // 单独提取 widget 配置，按 sort_order 排序
+    const ws = data.filter(d => d.category === 'dashboard_widget')
+      .sort((a, b) => a.sort_order - b.sort_order)
+    widgetItems.splice(0, widgetItems.length, ...ws.map(w => ({
+      id: w.id, code: w.code,
+      label: WIDGET_LABELS[w.code] || w.label,
+      is_active: w.is_active,
+      sort_order: w.sort_order,
+    })))
   } catch (e) {
     ElMessage.error('加载配置失败')
   }
@@ -172,6 +221,16 @@ function removeItem(item) {
   }
 }
 
+function moveWidget(idx, dir) {
+  const newIdx = idx + dir
+  if (newIdx < 0 || newIdx >= widgetItems.length) return
+  const tmp = widgetItems[idx]
+  widgetItems[idx] = widgetItems[newIdx]
+  widgetItems[newIdx] = tmp
+  // 重新赋值 sort_order
+  widgetItems.forEach((w, i) => { w.sort_order = i + 1 })
+}
+
 async function saveAll() {
   saving.value = true
   try {
@@ -198,6 +257,15 @@ async function saveAll() {
     // 4. 清理已删除项的内存记录
     const toRemove = allItems.map((d, i) => d._deleted ? i : -1).filter(i => i >= 0).reverse()
     for (const i of toRemove) allItems.splice(i, 1)
+    // 5. 保存看板开关和顺序
+    for (const w of widgetItems) {
+      if (w.id) {
+        await dictApi.update(w.id, {
+          category: 'dashboard_widget', code: w.code, label: w.label,
+          color: '', sort_order: w.sort_order, is_active: w.is_active,
+        })
+      }
+    }
 
     ElMessage.success('✅ 配置已保存')
   } catch (e) {
@@ -236,5 +304,53 @@ async function saveAll() {
 }
 .section-group {
   padding: 4px 0;
+}
+.section-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #2E4057;
+  margin: 0 0 8px 0;
+}
+.section-desc {
+  font-size: 13px;
+  color: #666;
+  margin: 0;
+}
+.widget-config-list {
+  border: 1px solid #e4e7ed;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.widget-config-row {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid #ebeef5;
+  background: #fff;
+}
+.widget-config-row:last-child {
+  border-bottom: none;
+}
+.widget-order {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #f0f2f5;
+  color: #606266;
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 12px;
+}
+.widget-name {
+  flex: 1;
+  font-size: 14px;
+  color: #303133;
+}
+.widget-actions {
+  display: flex;
+  align-items: center;
 }
 </style>
