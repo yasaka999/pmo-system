@@ -73,10 +73,10 @@
               <el-tag :type="statusType(row.status)" size="small">{{ statusLabel(row.status) }}</el-tag>
             </template>
           </el-table-column>
-          <!-- 阶段列（翻译显示） -->
+          <!-- 阶段列（带 Tag） -->
           <el-table-column v-else-if="col.key === 'phase'" :label="col.label" width="90">
             <template #default="{ row }">
-              {{ phaseLabel(row.phase) }}
+              <el-tag :type="phaseType(row.phase)" size="small">{{ phaseLabel(row.phase) }}</el-tag>
             </template>
           </el-table-column>
           <!-- 人天使用列（进度条） -->
@@ -392,6 +392,11 @@ function statusType(s) {
 function statusLabel(s) {
   const item = dictStore.getDictItem('project_status', s)
   return item.label || s
+}
+
+function phaseType(p) {
+  const item = dictStore.getDictItem('project_phase', p)
+  return item.color || ''
 }
 
 function phaseLabel(p) {
