@@ -87,6 +87,10 @@ def seed_dicts():
         dict(category="risk_status", code="rs_open",    label="开放",   color="danger",  sort_order=1),
         dict(category="risk_status", code="rs_mitig",   label="已缓解", color="warning", sort_order=2),
         dict(category="risk_status", code="rs_closed",  label="已关闭", color="success", sort_order=3),
+        # 风险等级（根据概率和影响自动计算）
+        dict(category="risk_level", code="rl_h", label="高", color="danger",  sort_order=1),
+        dict(category="risk_level", code="rl_m", label="中", color="warning", sort_order=2),
+        dict(category="risk_level", code="rl_l", label="低", color="success", sort_order=3),
     ]
     for d in dicts:
         db.add(SysDict(**d, is_active=True))
