@@ -248,7 +248,7 @@ async function saveAll() {
         sort_order: d.sort_order,
         color: d.color,
         is_active: d.is_active,
-        _deleted: d._deleted
+        _deleted: d._deleted || false
       })),
       // 看板配置
       ...widgetItems.map(w => ({
@@ -262,6 +262,10 @@ async function saveAll() {
         _deleted: false
       }))
     ]
+    
+    // 调试：打印删除项
+    const deletedItems = changedItems.filter(d => d._deleted)
+    console.log('准备删除的项:', deletedItems)
     
     // 一次请求完成所有操作
     const result = await dictApi.batchSave(changedItems)
