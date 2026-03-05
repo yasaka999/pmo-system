@@ -75,3 +75,25 @@ def delete_sys_dict(
     if not success:
         raise HTTPException(status_code=404, detail="字典项不存在")
     return {"message": "删除成功"}
+
+@router.post("/batch-save")
+def batch_save_sys_dicts(
+    data: schemas.SysDictBatchSave,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    批量保存字典项（新增、更新、删除一次完成）
+    """
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="没有权限执行此操作")
+    
+    items = [item.model_dump() for item in data.items]
+    created, updated, deleted = crud_sys_dict.batch_save_sys_dicts(db, items)
+    
+    return {
+        "message": "保存成功",
+        "created": created,
+        "updated": updated,
+        "deleted": deleted
+    }

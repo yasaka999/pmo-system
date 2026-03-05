@@ -309,3 +309,17 @@ class ManDayStat(BaseModel):
     total_days: float
     billable_days: float
     staff_breakdown: List[dict] = []
+
+# ============ Batch Operations ============
+class SysDictBatchItem(BaseModel):
+    id: Optional[int] = None  # None for new items
+    category: str
+    code: str
+    label: str
+    sort_order: int = 0
+    color: Optional[str] = None
+    is_active: bool = True
+    _deleted: bool = False  # Mark for deletion
+
+class SysDictBatchSave(BaseModel):
+    items: List[SysDictBatchItem]

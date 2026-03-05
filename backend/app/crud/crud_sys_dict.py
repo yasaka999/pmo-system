@@ -35,3 +35,49 @@ def delete_sys_dict(db: Session, dict_id: int):
         db.commit()
         return True
     return False
+
+def batch_save_sys_dicts(db: Session, items: list):
+    """
+    批量保存字典项：删除标记删除的，新增新项，更新已有项
+    返回 (created_count, updated_count, deleted_count)
+    """
+    created = 0
+    updated = 0
+    deleted = 0
+    
+    for item in items:
+        if item.get('_deleted') and item.get('id'):
+            # 删除
+            db_dict = get_sys_dict(db, item['id'])
+            if db_dict:
+                db.delete(db_dict)
+                deleted += 1
+        elif item.get('_deleted'):
+            # 新增但被标记删除，跳过
+            continue
+        elif not item.get('id'):
+            # 新增
+            db_dict = SysDict(
+                category=item['category'],
+                code=item['code'],
+                label=item['label'],
+                sort_order=item.get('sort_order', 0),
+                color=item.get('color'),
+                is_active=item.get('is_active', True)
+            )
+            db.add(db_dict)
+            created += 1
+        else:
+            # 更新
+            db_dict = get_sys_dict(db, item['id'])
+            if db_dict:
+                db_dict.category = item['category']
+                db_dict.code = item['code']
+                db_dict.label = item['label']
+                db_dict.sort_order = item.get('sort_order', 0)
+                db_dict.color = item.get('color')
+                db_dict.is_active = item.get('is_active', True)
+                updated += 1
+    
+    db.commit()
+    return created, updated, deleted
