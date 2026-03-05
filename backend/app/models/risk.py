@@ -2,11 +2,14 @@ from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, func
 from sqlalchemy.orm import relationship
 from app.db.base import Base
 
-# 风险矩阵：概率 x 影响 => 风险等级
+# 风险矩阵：概率 x 影响 => 风险等级（英文代码）
+# 概率: rp_h=高, rp_m=中, rp_l=低
+# 影响: ri_h=高, ri_m=中, ri_l=低
+# 等级: rl_h=高, rl_m=中, rl_l=低
 RISK_MATRIX = {
-    ("高", "高"): "极高", ("高", "中"): "高", ("高", "低"): "中",
-    ("中", "高"): "高",  ("中", "中"): "中", ("中", "低"): "低",
-    ("低", "高"): "中",  ("低", "中"): "低", ("低", "低"): "极低",
+    ("rp_h", "ri_h"): "rl_h", ("rp_h", "ri_m"): "rl_h", ("rp_h", "ri_l"): "rl_m",
+    ("rp_m", "ri_h"): "rl_h", ("rp_m", "ri_m"): "rl_m", ("rp_m", "ri_l"): "rl_l",
+    ("rp_l", "ri_h"): "rl_m", ("rp_l", "ri_m"): "rl_l", ("rp_l", "ri_l"): "rl_l",
 }
 
 
