@@ -155,7 +155,7 @@ function tasksByMs(msId) { return tasks.value.filter(t => t.milestone_id === msI
 
 function msTagType(s) {
   const c = dictStore.getDictItem('milestone_status', s).color
-  return c || { '已完成': 'success', '进行中': 'primary', '延期': 'danger', '未开始': 'info' }[s] || ''
+  return c || { 'ms_done': 'success', 'ms_inprog': 'primary', 'ms_delay': 'danger', 'ms_notstart': 'info', '已完成': 'success', '进行中': 'primary', '延期': 'danger', '未开始': 'info' }[s] || ''
 }
 
 function openMsDialog(ms = null) {

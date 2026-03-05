@@ -196,10 +196,10 @@ function msMarker(ms) {
 
 function msClass(status) {
   return {
-    '已完成': 'ms-done',
-    '进行中': 'ms-active',
-    '延期': 'ms-delay',
-    '未开始': 'ms-pending',
+    'ms_done': 'ms-done',
+    'ms_inprog': 'ms-active', '进行中': 'ms-active',
+    'ms_delay': 'ms-delay', '延期': 'ms-delay',
+    'ms_notstart': 'ms-pending', '未开始': 'ms-pending',
   }[status] || 'ms-pending'
 }
 

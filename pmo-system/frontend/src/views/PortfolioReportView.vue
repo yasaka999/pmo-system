@@ -269,7 +269,7 @@ async function loadData() {
       const milestones = await milestoneApi.list(p.id)
       milestones
         .filter(ms => {
-          if (!ms.plan_date || ms.status === '已完成') return false
+          if (!ms.plan_date || ms.status === 'ms_done') return false
           const planDate = new Date(ms.plan_date)
           planDate.setHours(0, 0, 0, 0)
           return planDate < today
