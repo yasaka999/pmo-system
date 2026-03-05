@@ -415,27 +415,14 @@ function goProject(id) {
 
 function statusType(s) {
   const item = dictStore.getDictItem('project_status', s)
-  // 将颜色转换为 el-tag 的 type: success/warning/danger/info
-  const colorMap = {
-    '#67C23A': 'success',
-    '#E6A23C': 'warning',
-    '#F56C6C': 'danger',
-    '#909399': 'info',
-    '#409EFF': '',
-  }
-  return colorMap[item.color] || ''
+  // color 字段直接存储 el-tag 的 type (success/warning/danger/info/primary)
+  // primary 对应默认蓝色，返回空字符串
+  return item.color === 'primary' ? '' : (item.color || '')
 }
 
 function phaseType(p) {
   const item = dictStore.getDictItem('project_phase', p)
-  const colorMap = {
-    '#409EFF': '',        // 蓝色 - 默认
-    '#67C23A': 'success', // 绿色
-    '#E6A23C': 'warning', // 橙色
-    '#F56C6C': 'danger',  // 红色
-    '#909399': 'info',    // 灰色
-  }
-  return colorMap[item.color] || ''
+  return item.color === 'primary' ? '' : (item.color || '')
 }
 
 onMounted(async () => {
