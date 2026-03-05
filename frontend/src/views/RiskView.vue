@@ -21,7 +21,7 @@
         </el-table-column>
         <el-table-column prop="level" label="风险等级" width="100" align="center">
           <template #default="{ row }">
-            <span :class="`risk-${row.level}`" style="font-weight:600">{{ getDictLabel('risk_level', row.level) || row.level || '-' }}</span>
+            <span :class="`risk-${row.level}`" style="font-weight:600">{{ row.level || '-' }}</span>
           </template>
         </el-table-column>
         <el-table-column prop="assignee" label="负责人" width="100" />
@@ -49,7 +49,7 @@
         <div class="m-card" v-for="row in risks" :key="row.id">
           <div class="m-card-header">
             <div class="m-card-title">{{ row.title }}</div>
-            <span :class="`risk-${row.level}`" style="font-weight:600;font-size:13px">{{ getDictLabel('risk_level', row.level) || row.level || '-' }}</span>
+            <span :class="`risk-${row.level}`" style="font-weight:600;font-size:13px">{{ row.level || '-' }}</span>
           </div>
           <div class="m-card-body">
             <div class="m-field"><span class="m-field-label">状态</span>
@@ -143,10 +143,6 @@ const statusOptions = computed(() => dictStore.getOptions('risk_status'))
 // 字典值转中文标签
 function getDictLabel(category, value) {
   const item = dictStore.getDictItem(category, value)
-  // 调试：如果找不到字典项，打印警告
-  if (!item || item.label === value) {
-    console.warn(`[Dict] ${category}[${value}] not found, available:`, dictStore.getOptions(category).map(o => o.value))
-  }
   return item?.label || value
 }
 
