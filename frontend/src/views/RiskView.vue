@@ -143,6 +143,10 @@ const statusOptions = computed(() => dictStore.getOptions('risk_status'))
 // 字典值转中文标签
 function getDictLabel(category, value) {
   const item = dictStore.getDictItem(category, value)
+  // 调试：如果找不到字典项，打印警告
+  if (!item || item.label === value) {
+    console.warn(`[Dict] ${category}[${value}] not found, available:`, dictStore.getOptions(category).map(o => o.value))
+  }
   return item?.label || value
 }
 
