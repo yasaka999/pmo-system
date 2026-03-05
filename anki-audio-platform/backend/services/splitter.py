@@ -9,9 +9,16 @@ logger = logging.getLogger(__name__)
 
 STORAGE_DIR = os.environ.get("STORAGE_DIR", os.path.join(os.path.dirname(__file__), "..", "..", "storage"))
 
+# 配置 ffmpeg 路径
+FFMPEG_PATH = os.environ.get("FFMPEG_PATH", "/root/.local/bin/ffmpeg")
+FFPROBE_PATH = os.environ.get("FFPROBE_PATH", "/root/.local/bin/ffprobe")
+
 # pydub 按需导入（需要 ffmpeg）
 try:
     from pydub import AudioSegment
+    # 配置 pydub 使用指定的 ffmpeg
+    AudioSegment.converter = FFMPEG_PATH
+    AudioSegment.ffprobe = FFPROBE_PATH
     PYDUB_AVAILABLE = True
 except ImportError:
     PYDUB_AVAILABLE = False

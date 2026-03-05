@@ -109,19 +109,39 @@ def _clean_text(text: str) -> str:
     return text.strip()
 
 
-def _merge_short_segments(segments: list[dict], min_ms: int = 500) -> list[dict]:
+def _merge_short_segments(segments: list[dict]) -> list[dict]:
     """
-    合并过短的片段（< 500ms），避免切割出无意义的极短音频
+    按句子边界合并字幕片段，每个句子一个卡片
     """
     if not segments:
         return []
-    merged = [segments[0]]
-    for seg in segments[1:]:
-        duration = seg["end_ms"] - seg["start_ms"]
-        if duration < min_ms and merged:
-            # 合并到上一段
-            merged[-1]["end_ms"] = seg["end_ms"]
-            merged[-1]["text"] += " " + seg["text"]
+    
+    # 句子结束标点
+    sentence_enders = ('.', '!', '?', '。', '！', '？')
+    
+    merged = []
+    current = None
+    
+    for seg in segments:
+        if current is None:
+            current = seg.copy()
+            continue
+        
+        text = seg["text"].strip()
+        current_text = current["text"].strip()
+        
+        # 当前片段以句子结束标点结尾 → 结束合并
+        if current_text.endswith(sentence_enders):
+            merged.append(current)
+            current = seg.copy()
         else:
-            merged.append(seg)
+            # 继续合并
+            current["end_ms"] = seg["end_ms"]
+            current["text"] = current_text + " " + text
+    
+    # 添加最后一个片段
+    if current:
+        merged.append(current)
+    
+    logger.info(f"字幕片段合并：{len(segments)} → {len(merged)} 段")
     return merged

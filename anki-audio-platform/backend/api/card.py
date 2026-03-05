@@ -19,8 +19,9 @@ BASE_URL = os.environ.get("BASE_URL", "http://localhost:8000")
 
 def _render_card_page(sentence: str, audio_url: str, side: int) -> str:
     """渲染 Anki iframe 加载的 HTML 页面"""
-
+    
     show_sentence = side == 1
+    is_looping = "true" if side == 0 else "false"  # 正面循环播放，背面不循环
     sentence_block = f"""
     <div class="sentence-block">
       <p class="sentence-text">{sentence}</p>
@@ -121,6 +122,7 @@ def _render_card_page(sentence: str, audio_url: str, side: int) -> str:
 const audio = document.getElementById('audio');
 const btn = document.getElementById('playBtn');
 const prog = document.getElementById('progress');
+var isLooping = {is_looping};
 
 audio.addEventListener('timeupdate', function() {{
   if (audio.duration) {{
@@ -128,9 +130,14 @@ audio.addEventListener('timeupdate', function() {{
   }}
 }});
 audio.addEventListener('ended', function() {{
-  btn.textContent = '▶';
-  btn.classList.remove('playing');
-  prog.style.width = '0%';
+  if (isLooping) {{
+    audio.currentTime = 0;
+    audio.play();
+  }} else {{
+    btn.textContent = '▶';
+    btn.classList.remove('playing');
+    prog.style.width = '0%';
+  }}
 }});
 
 function togglePlay() {{

@@ -4,6 +4,12 @@ FastAPI 应用入口
 import os
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
+
+from dotenv import load_dotenv
+# 显式指定 .env 文件路径（项目根目录）
+env_path = Path(__file__).parent.parent / ".env"
+load_dotenv(env_path)
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
