@@ -110,9 +110,10 @@ const props = defineProps({
   project: { type: Object, required: true },
   milestones: { type: Array, default: () => [] },
   tasks: { type: Array, default: () => [] },
+  dayPx: { type: Number, default: 14 },  // 每天的像素宽度，支持紧凑/标准/宽松
 })
 
-const DAY_PX = 14   // 每天的像素宽度
+const DAY_PX = computed(() => props.dayPx)   // 响应式的每天像素宽度
 
 // ── 日期范围计算 ─────────────────────────────────────
 const { startDate, endDate } = computed(() => {
@@ -143,13 +144,13 @@ const { startDate, endDate } = computed(() => {
 }).value
 
 const totalDays = Math.ceil((endDate - startDate) / 86400000)
-const totalWidthPx = computed(() => totalDays * DAY_PX)
+const totalWidthPx = computed(() => totalDays * DAY_PX.value)
 
 function dateToLeft(dateStr) {
   if (!dateStr) return -1
   const d = new Date(dateStr)
   const diff = Math.floor((d - startDate) / 86400000)
-  return diff * DAY_PX
+  return diff * DAY_PX.value
 }
 
 // ── 月份表头 ─────────────────────────────────────────
@@ -165,8 +166,8 @@ const months = computed(() => {
     result.push({
       key: `${y}-${m}`,
       label: `${y}年${m + 1}月`,
-      leftPx: Math.floor((cur - startDate) / 86400000) * DAY_PX,
-      widthPx: dayCount * DAY_PX,
+      leftPx: Math.floor((cur - startDate) / 86400000) * DAY_PX.value,
+      widthPx: dayCount * DAY_PX.value,
     })
     cur = next
   }
@@ -177,7 +178,7 @@ const months = computed(() => {
 const todayLeft = computed(() => {
   const now = new Date()
   now.setHours(0,0,0,0)
-  return Math.floor((now - startDate) / 86400000) * DAY_PX
+  return Math.floor((now - startDate) / 86400000) * DAY_PX.value
 })
 
 // ── 项目总条 ─────────────────────────────────────────
