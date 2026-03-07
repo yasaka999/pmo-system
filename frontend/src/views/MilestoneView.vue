@@ -149,8 +149,8 @@ function getDictLabel(category, value) {
   return item?.label || value
 }
 
-const msForm = ref({ name:'', status:'未开始', plan_date:null, actual_date:null, description:'', order_index:0 })
-const taskForm = ref({ name:'', assignee:'', plan_start:null, plan_end:null, status:'未开始', progress:0, notes:'' })
+const msForm = ref({ name:'', status:'ms_notstart', plan_date:null, actual_date:null, description:'', order_index:0 })
+const taskForm = ref({ name:'', assignee:'', plan_start:null, plan_end:null, status:'ms_notstart', progress:0, notes:'' })
 
 async function load() {
   milestones.value = await milestoneApi.list(pid)
@@ -166,7 +166,7 @@ function msTagType(s) {
 
 function openMsDialog(ms = null) {
   editMsId.value = ms?.id || null
-  msForm.value = ms ? { ...ms } : { name:'', status:'未开始', plan_date:null, actual_date:null, description:'', order_index:0 }
+  msForm.value = ms ? { ...ms } : { name:'', status:'ms_notstart', plan_date:null, actual_date:null, description:'', order_index:0 }
   msDlg.value = true
 }
 
@@ -201,7 +201,7 @@ function openTaskDialog(msId, task = null) {
       actual_end: parseDate(task.actual_end)
     }
   } else {
-    taskForm.value = { name:'', assignee:'', plan_start:null, plan_end:null, status:'未开始', progress:0, notes:'' }
+    taskForm.value = { name:'', assignee:'', plan_start:null, plan_end:null, status:'ms_notstart', progress:0, notes:'' }
   }
   taskDlg.value = true
 }
