@@ -55,3 +55,14 @@ def delete_user(db: Session, user_id: int):
         db.commit()
         return True
     return False
+
+# Export as module object
+user = {
+    'get': get_user,
+    'get_by_username': get_user_by_username,
+    'get_all': get_users,
+    'create': create_user,
+    'update': update_user,
+    'update_status': update_user_status,
+    'delete': delete_user,
+}

@@ -98,3 +98,14 @@ def batch_save_sys_dicts(db: Session, items: list):
     db.commit()
     print(f"=== batch_save result: created={created}, updated={updated}, deleted={deleted_count} ===")
     return created, updated, deleted_count
+
+# Export as module object
+sys_dict = {
+    'get': get_sys_dict,
+    'get_by_category': get_sys_dicts_by_category,
+    'get_all': get_sys_dicts,
+    'create': create_sys_dict,
+    'update': update_sys_dict,
+    'delete': delete_sys_dict,
+    'batch_save': batch_save_sys_dicts,
+}
