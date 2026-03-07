@@ -66,8 +66,8 @@ class ProjectBase(BaseModel):
     name: str
     client: Optional[str] = None
     manager: Optional[str] = None
-    phase: str = "启动"
-    status: str = "正常"
+    phase: str = "ph_kickoff"  # ph_pre=售前，ph_kickoff=启动，ph_impl=实施，ph_accept=验收，ph_close=收尾
+    status: str = "st_normal"  # st_normal=正常，st_warn=预警，st_delay=延期，st_pause=暂停，st_done=已完成
     plan_start: Optional[date] = None
     plan_end: Optional[date] = None
     actual_start: Optional[date] = None
@@ -152,7 +152,7 @@ class MilestoneBase(BaseModel):
     name: str
     plan_date: Optional[date] = None
     actual_date: Optional[date] = None
-    status: str = "未开始"
+    status: str = "ms_notstart"  # ms_notstart=未开始，ms_inprog=进行中，ms_done=已完成，ms_delay=延期
     description: Optional[str] = None
     order_index: int = 0
 
@@ -186,7 +186,7 @@ class TaskBase(BaseModel):
     actual_start: Optional[date] = None
     actual_end: Optional[date] = None
     progress: int = 0
-    status: str = "未开始"
+    status: str = "ms_notstart"  # ms_notstart=未开始，ms_inprog=进行中，ms_done=已完成，ms_delay=延期
     notes: Optional[str] = None
 
 class TaskCreate(TaskBase):
@@ -217,13 +217,13 @@ class TaskOut(TaskBase):
 class IssueBase(BaseModel):
     title: str
     description: Optional[str] = None
-    severity: str = "中"
-    source: str = "内部"
+    severity: str = "isev_m"  # isev_h=高，isev_m=中，isev_l=低
+    source: str = "src_inter"  # src_client=客户，src_inter=内部，src_3rd=第三方
     assignee: Optional[str] = None
     raised_date: Optional[date] = None
     due_date: Optional[date] = None
     resolved_date: Optional[date] = None
-    status: str = "待处理"
+    status: str = "ist_open"  # ist_open=待处理，ist_doing=处理中，ist_closed=已关闭
     resolution: Optional[str] = None
 
 class IssueCreate(IssueBase):
@@ -254,11 +254,11 @@ class IssueOut(IssueBase):
 class RiskBase(BaseModel):
     title: str
     description: Optional[str] = None
-    probability: str = "中"
-    impact: str = "中"
+    probability: str = "rp_m"  # rp_h=高，rp_m=中，rp_l=低
+    impact: str = "ri_m"  # ri_h=高，ri_m=中，ri_l=低
     mitigation: Optional[str] = None
     assignee: Optional[str] = None
-    status: str = "开放"
+    status: str = "rs_open"  # rs_open=开放，rs_mitig=已缓解，rs_closed=已关闭
 
 class RiskCreate(RiskBase):
     project_id: int

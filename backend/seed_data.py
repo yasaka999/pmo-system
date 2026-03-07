@@ -5,11 +5,11 @@ PMO 系统测试数据初始化脚本
 
 包含：
   - 系统字典（项目状态/阶段/问题/风险等全分类）
-  - 用户（admin + 3个不同角色用户）
-  - 3个项目（正常/预警/延期各一个）
-  - 每个项目的里程碑（3～4个）+ 工作任务（2～4个）
-  - 每个项目的问题台账（2～4条）
-  - 每个项目的风险台账（2～3条）
+  - 用户（admin + 3 个不同角色用户）
+  - 3 个项目（正常/预警/延期各一个）
+  - 每个项目的里程碑（3～4 个）+ 工作任务（2～4 个）
+  - 每个项目的问题台账（2～4 条）
+  - 每个项目的风险台账（2～3 条）
   - 每个项目的人天记录（多条，涵盖计费/非计费）
 """
 
@@ -98,7 +98,7 @@ def seed_dicts():
     print(f"✅ 字典配置：已插入 {len(dicts)} 条")
 
 def seed_users():
-    """新增3个测试用户（保留已有 admin）"""
+    """新增 3 个测试用户（保留已有 admin）"""
     users = [
         dict(username="pmo_zhang", full_name="张敏（PMO）",  role="pmo",    password="pmo123"),
         dict(username="pm_li",     full_name="李强（PM）",    role="member", password="pm123"),
@@ -120,14 +120,14 @@ def seed_users():
 def seed_projects_and_children():
     today = date.today()
 
-    # ─────────────── 项目1：某银行信贷系统上线（正常） ───────────────
+    # ─────────────── 项目 1：某银行信贷系统上线（正常） ───────────────
     p1 = Project(
         code="PMO-2024-001",
         name="某银行信贷系统实施项目",
         client="某商业银行",
         manager="李强",
-        phase="实施",
-        status="正常",
+        phase="ph_impl",      # 实施
+        status="st_normal",   # 正常
         description="为某商业银行实施新一代信贷系统，包含授信、放贷、还款模块。",
         plan_start=today - timedelta(days=120),
         plan_end=today + timedelta(days=60),
@@ -137,59 +137,59 @@ def seed_projects_and_children():
     db.flush()
 
     ms1_1 = Milestone(project_id=p1.id, name="需求调研完成", plan_date=today - timedelta(days=90),
-                      actual_date=today - timedelta(days=88), status="已完成", order_index=1)
+                      actual_date=today - timedelta(days=88), status="ms_done", order_index=1)
     ms1_2 = Milestone(project_id=p1.id, name="系统开发完成", plan_date=today - timedelta(days=30),
-                      actual_date=today - timedelta(days=28), status="已完成", order_index=2)
-    ms1_3 = Milestone(project_id=p1.id, name="UAT测试完成", plan_date=today + timedelta(days=15),
-                      status="进行中", order_index=3)
+                      actual_date=today - timedelta(days=28), status="ms_done", order_index=2)
+    ms1_3 = Milestone(project_id=p1.id, name="UAT 测试完成", plan_date=today + timedelta(days=15),
+                      status="ms_inprog", order_index=3)
     ms1_4 = Milestone(project_id=p1.id, name="生产上线", plan_date=today + timedelta(days=45),
-                      status="未开始", order_index=4)
+                      status="ms_notstart", order_index=4)
     db.add_all([ms1_1, ms1_2, ms1_3, ms1_4])
     db.flush()
 
     db.add_all([
         Task(project_id=p1.id, milestone_id=ms1_3.id, name="授信模块测试用例编写",
              assignee="张敏", plan_start=today - timedelta(days=10), plan_end=today,
-             status="进行中", progress=70),
-        Task(project_id=p1.id, milestone_id=ms1_3.id, name="放贷模块UAT执行",
+             status="ms_inprog", progress=70),
+        Task(project_id=p1.id, milestone_id=ms1_3.id, name="放贷模块 UAT 执行",
              assignee="李强", plan_start=today, plan_end=today + timedelta(days=10),
-             status="未开始", progress=0),
+             status="ms_notstart", progress=0),
         Task(project_id=p1.id, milestone_id=ms1_4.id, name="生产环境部署方案编写",
              assignee="王技术", plan_start=today + timedelta(days=10), plan_end=today + timedelta(days=20),
-             status="未开始", progress=0),
+             status="ms_notstart", progress=0),
         Task(project_id=p1.id, milestone_id=ms1_4.id, name="数据迁移脚本验证",
              assignee="张敏", plan_start=today + timedelta(days=20), plan_end=today + timedelta(days=35),
-             status="未开始", progress=0),
+             status="ms_notstart", progress=0),
     ])
 
     db.add_all([
         Issue(project_id=p1.id, title="授信规则引擎计算结果与预期不符",
               description="规则引擎在部分边界场景下的利率计算结果不正确，影响验收测试通过",
-              severity="高", source="客户", assignee="李强",
+              severity="isev_h", source="src_client", assignee="李强",
               raised_date=today - timedelta(days=5), due_date=today + timedelta(days=3),
-              status="处理中", resolution="正在排查参数配置问题"),
-        Issue(project_id=p1.id, title="UAT测试环境数据库连接超时",
-              description="高并发情况下测试环境MySQL连接池满，造成超时",
-              severity="中", source="内部", assignee="王技术",
+              status="ist_doing", resolution="正在排查参数配置问题"),
+        Issue(project_id=p1.id, title="UAT 测试环境数据库连接超时",
+              description="高并发情况下测试环境 MySQL 连接池满，造成超时",
+              severity="isev_m", source="src_inter", assignee="王技术",
               raised_date=today - timedelta(days=3), due_date=today + timedelta(days=7),
-              status="待处理"),
+              status="ist_open"),
         Issue(project_id=p1.id, title="文档版本不一致",
               description="接口文档与实际开发版本存在差异",
-              severity="低", source="内部", assignee="张敏",
+              severity="isev_l", source="src_inter", assignee="张敏",
               raised_date=today - timedelta(days=15),
               resolved_date=today - timedelta(days=10),
-              status="已关闭", resolution="已统一更新文档至v2.3"),
+              status="ist_closed", resolution="已统一更新文档至 v2.3"),
     ])
 
     db.add_all([
-        Risk(project_id=p1.id, title="客户IT部门配合度不足",
-             description="客户IT人员参与度低，测试数据准备缓慢",
-             probability="中", impact="高", level="高",
-             assignee="李强", mitigation="升级至客户分管副行长，制定配合计划", status="开放"),
+        Risk(project_id=p1.id, title="客户 IT 部门配合度不足",
+             description="客户 IT 人员参与度低，测试数据准备缓慢",
+             probability="rp_m", impact="ri_h", level="rl_h",
+             assignee="李强", mitigation="升级至客户分管副行长，制定配合计划", status="rs_open"),
         Risk(project_id=p1.id, title="生产数据量超出预期",
-             description="历史数据量超过估算2倍，迁移耗时存在风险",
-             probability="低", impact="中", level="中",
-             assignee="王技术", mitigation="提前进行性能测试，准备增量迁移方案", status="已缓解"),
+             description="历史数据量超过估算 2 倍，迁移耗时存在风险",
+             probability="rp_l", impact="ri_m", level="rl_m",
+             assignee="王技术", mitigation="提前进行性能测试，准备增量迁移方案", status="rs_mitig"),
     ])
 
     db.add_all([
@@ -205,14 +205,14 @@ def seed_projects_and_children():
                days=5, is_billable=False, work_content="环境搭建、脚本开发") for i in range(1, 3)
     ])
 
-    # ─────────────── 项目2：某政务平台改造（预警） ───────────────
+    # ─────────────── 项目 2：某政务平台改造（预警） ───────────────
     p2 = Project(
         code="PMO-2024-002",
         name="某市政务服务平台改造项目",
         client="某市行政审批局",
         manager="张敏",
-        phase="验收",
-        status="预警",
+        phase="ph_accept",   # 验收
+        status="st_warn",    # 预警
         description="对现有政务服务平台进行功能升级和性能优化，支持更多事项在线办理。",
         plan_start=today - timedelta(days=180),
         plan_end=today + timedelta(days=15),
@@ -222,61 +222,61 @@ def seed_projects_and_children():
     db.flush()
 
     ms2_1 = Milestone(project_id=p2.id, name="旧系统调研与分析", plan_date=today - timedelta(days=150),
-                      actual_date=today - timedelta(days=145), status="已完成", order_index=1)
+                      actual_date=today - timedelta(days=145), status="ms_done", order_index=1)
     ms2_2 = Milestone(project_id=p2.id, name="平台功能开发完成", plan_date=today - timedelta(days=60),
-                      actual_date=today - timedelta(days=55), status="已完成", order_index=2)
+                      actual_date=today - timedelta(days=55), status="ms_done", order_index=2)
     ms2_3 = Milestone(project_id=p2.id, name="性能压测验收", plan_date=today - timedelta(days=7),
-                      status="延期", order_index=3,
+                      status="ms_delay", order_index=3,
                       description="原计划上周完成，因压测场景设计问题延期")
     ms2_4 = Milestone(project_id=p2.id, name="系统正式投产", plan_date=today + timedelta(days=14),
-                      status="未开始", order_index=4)
+                      status="ms_notstart", order_index=4)
     db.add_all([ms2_1, ms2_2, ms2_3, ms2_4])
     db.flush()
 
     db.add_all([
         Task(project_id=p2.id, milestone_id=ms2_3.id, name="高并发场景压测脚本编写",
              assignee="王技术", plan_start=today - timedelta(days=14), plan_end=today - timedelta(days=7),
-             status="进行中", progress=60),
+             status="ms_inprog", progress=60),
         Task(project_id=p2.id, milestone_id=ms2_3.id, name="压测环境准备与调优",
              assignee="王技术", plan_start=today - timedelta(days=7), plan_end=today + timedelta(days=3),
-             status="进行中", progress=40),
+             status="ms_inprog", progress=40),
         Task(project_id=p2.id, milestone_id=ms2_4.id, name="投产方案评审",
              assignee="张敏", plan_start=today + timedelta(days=5), plan_end=today + timedelta(days=8),
-             status="未开始", progress=0),
+             status="ms_notstart", progress=0),
     ])
 
     db.add_all([
-        Issue(project_id=p2.id, title="压测QPS未达标，仅为目标值70%",
-              description="在2000并发下系统响应时间超过5秒，QPS仅1400，要求2000",
-              severity="高", source="内部", assignee="王技术",
+        Issue(project_id=p2.id, title="压测 QPS 未达标，仅为目标值 70%",
+              description="在 2000 并发下系统响应时间超过 5 秒，QPS 仅 1400，要求 2000",
+              severity="isev_h", source="src_inter", assignee="王技术",
               raised_date=today - timedelta(days=8), due_date=today + timedelta(days=5),
-              status="处理中", resolution="已定位到数据库慢查询，正在优化索引"),
+              status="ist_doing", resolution="已定位到数据库慢查询，正在优化索引"),
         Issue(project_id=p2.id, title="部分事项表单数据丢失",
               description="提交某类事项后偶现表单数据未完整保存",
-              severity="高", source="客户", assignee="李强",
+              severity="isev_h", source="src_client", assignee="李强",
               raised_date=today - timedelta(days=5), due_date=today + timedelta(days=2),
-              status="待处理"),
+              status="ist_open"),
         Issue(project_id=p2.id, title="页面存在部分按钮样式错位",
-              description="IE11兼容性问题，部分按钮显示异常",
-              severity="低", source="客户", assignee="张敏",
+              description="IE11 兼容性问题，部分按钮显示异常",
+              severity="isev_l", source="src_client", assignee="张敏",
               raised_date=today - timedelta(days=20),
               resolved_date=today - timedelta(days=18),
-              status="已关闭", resolution="已针对IE11增加样式兼容"),
+              status="ist_closed", resolution="已针对 IE11 增加样式兼容"),
     ])
 
     db.add_all([
         Risk(project_id=p2.id, title="性能问题导致验收推迟上线",
              description="当前性能压测未通过，若无法在计划日期前解决将推迟投产",
-             probability="高", impact="高", level="极高",
-             assignee="张敏", mitigation="每日召开技术攻关会议，同时启动分布式方案可行性研究", status="开放"),
+             probability="rp_h", impact="ri_h", level="rl_h",
+             assignee="张敏", mitigation="每日召开技术攻关会议，同时启动分布式方案可行性研究", status="rs_open"),
         Risk(project_id=p2.id, title="客户验收人员调岗",
              description="对接负责人已通知调岗，新负责人尚未完成交接",
-             probability="中", impact="中", level="中",
-             assignee="张敏", mitigation="加快完成交接文档，安排新对接人快速了解项目", status="开放"),
+             probability="rp_m", impact="ri_m", level="rl_m",
+             assignee="张敏", mitigation="加快完成交接文档，安排新对接人快速了解项目", status="rs_open"),
         Risk(project_id=p2.id, title="服务器采购延迟",
              description="生产服务器采购流程较长，存在到货晚于投产计划的风险",
-             probability="低", impact="高", level="高",
-             assignee="王技术", mitigation="已申请绿色通道加急采购", status="已缓解"),
+             probability="rp_l", impact="ri_h", level="rl_h",
+             assignee="王技术", mitigation="已申请绿色通道加急采购", status="rs_mitig"),
     ])
 
     for i in range(1, 6):
@@ -287,15 +287,15 @@ def seed_projects_and_children():
         db.add(ManDay(project_id=p2.id, staff_name="刘测试", role="测试工程师",
                       work_date=today - timedelta(days=i*7), days=4, is_billable=True, work_content="压测脚本开发与执行"))
 
-    # ─────────────── 项目3：某集团ERP系统实施（延期） ───────────────
+    # ─────────────── 项目 3：某集团 ERP 系统实施（延期） ───────────────
     p3 = Project(
         code="PMO-2025-001",
-        name="某制造集团ERP系统实施",
+        name="某制造集团 ERP 系统实施",
         client="某制造集团有限公司",
         manager="刘总",
-        phase="实施",
-        status="延期",
-        description="为某制造集团实施SAP ERP系统，覆盖财务、采购、生产、销售四个模块。",
+        phase="ph_impl",    # 实施
+        status="st_delay",  # 延期
+        description="为某制造集团实施 SAP ERP 系统，覆盖财务、采购、生产、销售四个模块。",
         plan_start=today - timedelta(days=240),
         plan_end=today - timedelta(days=30),   # 计划已过期，项目延期
         budget_mandays=500,
@@ -304,72 +304,72 @@ def seed_projects_and_children():
     db.flush()
 
     ms3_1 = Milestone(project_id=p3.id, name="蓝图设计完成", plan_date=today - timedelta(days=200),
-                      actual_date=today - timedelta(days=195), status="已完成", order_index=1)
+                      actual_date=today - timedelta(days=195), status="ms_done", order_index=1)
     ms3_2 = Milestone(project_id=p3.id, name="财务模块上线", plan_date=today - timedelta(days=120),
-                      actual_date=today - timedelta(days=100), status="已完成", order_index=2,
-                      description="较计划延期20天，因科目体系设计变更")
-    ms3_3 = Milestone(project_id=p3.id, name="采购+生产模块上线", plan_date=today - timedelta(days=60),
-                      status="进行中", order_index=3,
-                      description="目前已延期60天，正在加班赶进度")
-    ms3_4 = Milestone(project_id=p3.id, name="销售模块+全面上线", plan_date=today - timedelta(days=30),
-                      status="延期", order_index=4)
+                      actual_date=today - timedelta(days=100), status="ms_done", order_index=2,
+                      description="较计划延期 20 天，因科目体系设计变更")
+    ms3_3 = Milestone(project_id=p3.id, name="采购 + 生产模块上线", plan_date=today - timedelta(days=60),
+                      status="ms_inprog", order_index=3,
+                      description="目前已延期 60 天，正在加班赶进度")
+    ms3_4 = Milestone(project_id=p3.id, name="销售模块 + 全面上线", plan_date=today - timedelta(days=30),
+                      status="ms_delay", order_index=4)
     ms3_5 = Milestone(project_id=p3.id, name="系统验收", plan_date=today + timedelta(days=60),
-                      status="未开始", order_index=5)
+                      status="ms_notstart", order_index=5)
     db.add_all([ms3_1, ms3_2, ms3_3, ms3_4, ms3_5])
     db.flush()
 
     db.add_all([
         Task(project_id=p3.id, milestone_id=ms3_3.id, name="采购模块配置与开发",
              assignee="王顾问", plan_start=today - timedelta(days=90), plan_end=today - timedelta(days=30),
-             status="进行中", progress=80),
+             status="ms_inprog", progress=80),
         Task(project_id=p3.id, milestone_id=ms3_3.id, name="生产计划模块配置",
              assignee="赵顾问", plan_start=today - timedelta(days=60), plan_end=today - timedelta(days=10),
-             status="进行中", progress=55),
+             status="ms_inprog", progress=55),
         Task(project_id=p3.id, milestone_id=ms3_4.id, name="销售模块配置",
              assignee="王顾问", plan_start=today - timedelta(days=10), plan_end=today + timedelta(days=30),
-             status="进行中", progress=25),
+             status="ms_inprog", progress=25),
         Task(project_id=p3.id, milestone_id=ms3_4.id, name="集成测试（全模块）",
              assignee="刘测试", plan_start=today + timedelta(days=20), plan_end=today + timedelta(days=50),
-             status="未开始", progress=0),
+             status="ms_notstart", progress=0),
     ])
 
     db.add_all([
-        Issue(project_id=p3.id, title="采购模块与现有OA系统集成接口报错",
-              description="SAP BAPI接口调用OA审批流程时返回权限错误，导致采购单无法自动流转",
-              severity="高", source="内部", assignee="王顾问",
+        Issue(project_id=p3.id, title="采购模块与现有 OA 系统集成接口报错",
+              description="SAP BAPI 接口调用 OA 审批流程时返回权限错误，导致采购单无法自动流转",
+              severity="isev_h", source="src_inter", assignee="王顾问",
               raised_date=today - timedelta(days=15), due_date=today + timedelta(days=7),
-              status="处理中", resolution="正在与OA厂商联调"),
+              status="ist_doing", resolution="正在与 OA 厂商联调"),
         Issue(project_id=p3.id, title="客户关键用户流失",
               description="财务模块核心关键用户离职，新接手人员需重新培训",
-              severity="高", source="客户", assignee="刘总",
+              severity="isev_h", source="src_client", assignee="刘总",
               raised_date=today - timedelta(days=20), due_date=today + timedelta(days=10),
-              status="待处理"),
-        Issue(project_id=p3.id, title="生产BOM数据清洗质量低",
-              description="生产模块依赖的BOM数据存在大量错误，需要客户重新整理",
-              severity="中", source="客户", assignee="赵顾问",
+              status="ist_open"),
+        Issue(project_id=p3.id, title="生产 BOM 数据清洗质量低",
+              description="生产模块依赖的 BOM 数据存在大量错误，需要客户重新整理",
+              severity="isev_m", source="src_client", assignee="赵顾问",
               raised_date=today - timedelta(days=30), due_date=today + timedelta(days=30),
-              status="处理中", resolution="已提供数据清洗模板，客户IT部门正在处理"),
+              status="ist_doing", resolution="已提供数据清洗模板，客户 IT 部门正在处理"),
         Issue(project_id=p3.id, title="前期需求调研文档遗漏部分税务场景",
               description="发现部分复杂税务处理场景未在调研阶段识别，需补充开发",
-              severity="高", source="内部", assignee="王顾问",
+              severity="isev_h", source="src_inter", assignee="王顾问",
               raised_date=today - timedelta(days=45),
               resolved_date=today - timedelta(days=20),
-              status="已关闭", resolution="已完成补充开发并通过客户确认"),
+              status="ist_closed", resolution="已完成补充开发并通过客户确认"),
     ])
 
     db.add_all([
         Risk(project_id=p3.id, title="整体项目严重超期，面临违约风险",
-             description="项目已超原定完成日期30天，合同包含延期赔偿条款，继续延期将产生罚款",
-             probability="高", impact="高", level="极高",
-             assignee="刘总", mitigation="已与客户协议签署变更单，延期至Q2末完成，免除违约", status="开放"),
+             description="项目已超原定完成日期 30 天，合同包含延期赔偿条款，继续延期将产生罚款",
+             probability="rp_h", impact="ri_h", level="rl_h",
+             assignee="刘总", mitigation="已与客户协议签署变更单，延期至 Q2 末完成，免除违约", status="rs_open"),
         Risk(project_id=p3.id, title="顾问团队疲劳，人员稳定性风险",
-             description="团队连续高强度工作超过3个月，有成员辞职意向",
-             probability="中", impact="高", level="高",
-             assignee="刘总", mitigation="申请增加1名外包顾问，批准中", status="开放"),
+             description="团队连续高强度工作超过 3 个月，有成员辞职意向",
+             probability="rp_m", impact="ri_h", level="rl_h",
+             assignee="刘总", mitigation="申请增加 1 名外包顾问，批准中", status="rs_open"),
         Risk(project_id=p3.id, title="客户高层变动影响项目决策",
              description="分管信息化的副总裁已离职，新任副总裁对系统的支持态度待观察",
-             probability="低", impact="高", level="高",
-             assignee="刘总", mitigation="安排公司一把手拜访客户新任副总裁", status="已缓解"),
+             probability="rp_l", impact="ri_h", level="rl_h",
+             assignee="刘总", mitigation="安排公司一把手拜访客户新任副总裁", status="rs_mitig"),
     ])
 
     for i in range(1, 9):
@@ -409,14 +409,14 @@ if __name__ == "__main__":
     print()
     print("  测试用户账号：")
     print("    admin    / admin123   （系统管理员）")
-    print("    pmo_zhang/ pmo123     （PMO角色）")
+    print("    pmo_zhang/ pmo123     （PMO 角色）")
     print("    pm_li    / pm123      （项目成员）")
     print("    viewer1  / view123    （只读用户）")
     print()
     print("  测试项目：")
     print("    PMO-2024-001 某银行信贷系统实施项目  → 状态：正常")
     print("    PMO-2024-002 某市政务服务平台改造   → 状态：预警")
-    print("    PMO-2025-001 某制造集团ERP系统实施  → 状态：延期")
+    print("    PMO-2025-001 某制造集团 ERP 系统实施  → 状态：延期")
     print("=" * 60)
 
     db.close()
