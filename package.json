@@ -1,0 +1,20 @@
+{
+  "name": "pmo-system",
+  "version": "1.0.0",
+  "description": "> 面向 PMO 团队的轻量级项目进度管理与汇报平台",
+  "main": "encry.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yasaka999/python.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/yasaka999/python/issues"
+  },
+  "homepage": "https://github.com/yasaka999/python#readme"
+}

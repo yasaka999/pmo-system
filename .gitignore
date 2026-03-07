@@ -32,3 +32,4 @@ frontend/frontend_log.txt
 *.env
 .env.local
 .env.*.local
+.gitnexus
