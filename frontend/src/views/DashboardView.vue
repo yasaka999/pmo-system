@@ -306,8 +306,8 @@ const computed_stats = computed(() => {
   const pendingAcc = ps.filter(p => p.actual_delivery_date && !p.actual_final_acceptance_date)
   return {
     total: ps.length,
-    in_progress: ps.filter(p => !['暂停', '已完成'].includes(p.status)).length,
-    done: ps.filter(p => p.status === '已完成').length,
+    in_progress: ps.filter(p => !['st_pause', 'st_done'].includes(p.status)).length,
+    done: ps.filter(p => p.status === 'st_done').length,
     open_issues: ps.reduce((s, p) => s + (p.open_issue_count || 0), 0),
     open_risks: ps.reduce((s, p) => s + (p.open_risk_count || 0), 0),
     delivered: ps.filter(p => p.actual_delivery_date).length,
@@ -321,11 +321,11 @@ const computed_stats = computed(() => {
       normal: pendingAcc.filter(p => !isOverdue(p.plan_final_acceptance_date, p.actual_final_acceptance_date)).length,
     },
     // 按状态细分
-    status_normal:  ps.filter(p => p.status === '正常').length,
-    status_warning: ps.filter(p => p.status === '预警').length,
-    status_delayed: ps.filter(p => p.status === '延期').length,
-    status_paused:  ps.filter(p => p.status === '暂停').length,
-    status_done:    ps.filter(p => p.status === '已完成').length,
+    status_normal:  ps.filter(p => p.status === 'st_normal').length,
+    status_warning: ps.filter(p => p.status === 'st_warn').length,
+    status_delayed: ps.filter(p => p.status === 'st_delay').length,
+    status_paused:  ps.filter(p => p.status === 'st_pause').length,
+    status_done:    ps.filter(p => p.status === 'st_done').length,
   }
 })
 
@@ -360,16 +360,16 @@ const drawerProjects = computed(() => {
   const ps = projects.value
   const code = drawerCode.value
   if (code === 'total') return ps
-  if (code === 'in_progress') return ps.filter(p => !['暂停', '已完成'].includes(p.status))
-  if (code === 'done') return ps.filter(p => p.status === '已完成')
+  if (code === 'in_progress') return ps.filter(p => !['st_pause', 'st_done'].includes(p.status))
+  if (code === 'done') return ps.filter(p => p.status === 'st_done')
   if (code === 'delivered') return ps.filter(p => p.actual_delivery_date)
   if (code === 'accepted') return ps.filter(p => p.actual_final_acceptance_date)
   if (code === 'pending_delivery') return ps.filter(p => p.plan_delivery_date && !p.actual_delivery_date)
   if (code === 'pending_acceptance') return ps.filter(p => p.actual_delivery_date && !p.actual_final_acceptance_date)
   // 按状态拆分
   const STATUS_MAP = {
-    status_normal: '正常', status_warning: '预警',
-    status_delayed: '延期', status_paused: '暂停', status_done: '已完成'
+    status_normal: 'st_normal', status_warning: 'st_warn',
+    status_delayed: 'st_delay', status_paused: 'st_pause', status_done: 'st_done'
   }
   if (STATUS_MAP[code]) return ps.filter(p => p.status === STATUS_MAP[code])
   return []
