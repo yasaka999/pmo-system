@@ -58,6 +58,52 @@ SEVERITY_COLOR = {"高": COLOR_RED, "中": COLOR_ORANGE, "低": COLOR_GREEN}
 
 
 # ──────────────────────────────────────────────────────────
+# 字典代码 → 中文标签映射
+# ──────────────────────────────────────────────────────────
+DICT_LABELS = {
+    "project_phase": {
+        "ph_pre": "售前", "ph_kickoff": "启动", "ph_impl": "实施",
+        "ph_accept": "验收", "ph_close": "收尾",
+    },
+    "project_status": {
+        "st_normal": "正常", "st_warn": "预警", "st_delay": "延期",
+        "st_pause": "暂停", "st_done": "已完成",
+    },
+    "issue_severity": {"isev_h": "高", "isev_m": "中", "isev_l": "低"},
+    "issue_source": {"src_client": "客户", "src_inter": "内部", "src_3rd": "第三方"},
+    "issue_status": {"ist_open": "待处理", "ist_doing": "处理中", "ist_closed": "已关闭"},
+    "risk_prob": {"rp_h": "高", "rp_m": "中", "rp_l": "低"},
+    "risk_impact": {"ri_h": "高", "ri_m": "中", "ri_l": "低"},
+    "risk_level": {"rl_h": "高", "rl_m": "中", "rl_l": "低"},
+    "risk_status": {"rs_open": "开放", "rs_mitig": "已缓解", "rs_closed": "已关闭"},
+    "milestone_status": {"ms_notstart": "未开始", "ms_inprog": "进行中", "ms_done": "已完成", "ms_delay": "延期"},
+}
+
+
+def _get_dict_label(category: str, code: str, db: Session = None) -> str:
+    """将字典代码转换为中文标签"""
+    if not code:
+        return "-"
+    # 先查静态映射
+    if category in DICT_LABELS and code in DICT_LABELS[category]:
+        return DICT_LABELS[category][code]
+    # 中文直接返回
+    if any(ord(c) > 127 for c in code):
+        return code
+    # 自定义字段：从数据库查询字典标签
+    if db and code.startswith("project_phase_"):
+        from app.models.sys_dict import SysDict
+        dict_item = db.query(SysDict).filter(
+            SysDict.category == category,
+            SysDict.code == code
+        ).first()
+        if dict_item:
+            return dict_item.label
+    # 其他情况返回原值
+    return code
+
+
+# ──────────────────────────────────────────────────────────
 # Word 辅助函数
 # ──────────────────────────────────────────────────────────
 FONT_CN = "宋体"
@@ -200,7 +246,7 @@ def generate_weekly_report(project_id: int, db: Session, report_date: Optional[d
     info = [
         ("项目名称", project.name, "项目编号", project.code),
         ("客户/甲方", project.client or "-", "项目经理", project.manager or "-"),
-        ("项目阶段", project.phase, "项目状态", project.status),
+        ("项目阶段", _get_dict_label("project_phase", project.phase, db), "项目状态", _get_dict_label("project_status", project.status)),
         ("计划开始", _fmt_date(project.plan_start), "计划结束", _fmt_date(project.plan_end)),
         ("实际开始", _fmt_date(project.actual_start), "报告日期", _fmt_date(today)),
     ]
@@ -220,7 +266,7 @@ def generate_weekly_report(project_id: int, db: Session, report_date: Optional[d
     milestones = db.query(Milestone).filter(Milestone.project_id == project_id).order_by(Milestone.order_index).all()
     if milestones:
         ms_rows = [
-            (ms.name, ms.status, _fmt_date(ms.plan_date), _fmt_date(ms.actual_date), ms.description or "-")
+            (ms.name, _get_dict_label("milestone_status", ms.status), _fmt_date(ms.plan_date), _fmt_date(ms.actual_date), ms.description or "-")
             for ms in milestones
         ]
         _add_table(doc, ["里程碑", "状态", "计划日期", "实际日期", "备注"], ms_rows)
@@ -258,7 +304,7 @@ def generate_weekly_report(project_id: int, db: Session, report_date: Optional[d
     _add_heading(doc, "五、问题跟踪", level=2)
     issues = db.query(Issue).filter(Issue.project_id == project_id, Issue.status != "已关闭").all()
     if issues:
-        i_rows = [(i.title, i.severity, i.assignee or "-", _fmt_date(i.due_date), i.status) for i in issues]
+        i_rows = [(i.title, _get_dict_label("issue_severity", i.severity), i.assignee or "-", _fmt_date(i.due_date), _get_dict_label("issue_status", i.status)) for i in issues]
         _add_table(doc, ["问题", "等级", "负责人", "期望解决日期", "状态"], i_rows)
     else:
         doc.add_paragraph("暂无未关闭问题。")
@@ -268,7 +314,7 @@ def generate_weekly_report(project_id: int, db: Session, report_date: Optional[d
     _add_heading(doc, "六、风险跟踪", level=2)
     risks = db.query(Risk).filter(Risk.project_id == project_id, Risk.status == "开放").all()
     if risks:
-        r_rows = [(r.title, r.probability, r.impact, r.level or "-", r.assignee or "-", r.mitigation or "-") for r in risks]
+        r_rows = [(r.title, _get_dict_label("risk_prob", r.probability), _get_dict_label("risk_impact", r.impact), _get_dict_label("risk_level", r.level) or "-", r.assignee or "-", r.mitigation or "-") for r in risks]
         _add_table(doc, ["风险", "概率", "影响", "等级", "负责人", "应对措施"], r_rows)
     else:
         doc.add_paragraph("暂无开放风险。")
@@ -303,8 +349,8 @@ def generate_monthly_report(project_id: int, year: int, month: int, db: Session)
     used_mandays = db.query(func.sum(ManDay.days)).filter(ManDay.project_id == project_id).scalar() or 0
     overview = [
         ("项目名称", project.name),
-        ("项目状态", project.status),
-        ("项目阶段", project.phase),
+        ("项目状态", _get_dict_label("project_status", project.status)),
+        ("项目阶段", _get_dict_label("project_phase", project.phase, db)),
         ("计划结束", _fmt_date(project.plan_end)),
         ("预算人天", f"{project.budget_mandays:.1f}"),
         ("已用人天", f"{used_mandays:.1f}"),
@@ -326,7 +372,7 @@ def generate_monthly_report(project_id: int, year: int, month: int, db: Session)
     milestones = db.query(Milestone).filter(Milestone.project_id == project_id).order_by(Milestone.order_index).all()
     if milestones:
         ms_rows = [
-            (ms.name, ms.status, _fmt_date(ms.plan_date), _fmt_date(ms.actual_date))
+            (ms.name, _get_dict_label("milestone_status", ms.status), _fmt_date(ms.plan_date), _fmt_date(ms.actual_date))
             for ms in milestones
         ]
         _add_table(doc, ["里程碑", "状态", "计划日期", "实际日期"], ms_rows)
@@ -356,7 +402,7 @@ def generate_monthly_report(project_id: int, year: int, month: int, db: Session)
     _add_heading(doc, "四、未关闭问题清单", level=2)
     issues = db.query(Issue).filter(Issue.project_id == project_id, Issue.status != "已关闭").all()
     if issues:
-        i_rows = [(i.title, i.severity, i.assignee or "-", _fmt_date(i.due_date), i.status) for i in issues]
+        i_rows = [(i.title, _get_dict_label("issue_severity", i.severity), i.assignee or "-", _fmt_date(i.due_date), _get_dict_label("issue_status", i.status)) for i in issues]
         _add_table(doc, ["问题", "等级", "负责人", "期望解决", "状态"], i_rows)
     else:
         doc.add_paragraph("暂无未关闭问题。")
@@ -365,7 +411,7 @@ def generate_monthly_report(project_id: int, year: int, month: int, db: Session)
     _add_heading(doc, "五、开放风险清单", level=2)
     risks = db.query(Risk).filter(Risk.project_id == project_id, Risk.status == "开放").all()
     if risks:
-        r_rows = [(r.title, r.level or "-", r.assignee or "-", r.mitigation or "-") for r in risks]
+        r_rows = [(r.title, _get_dict_label("risk_level", r.level) or "-", r.assignee or "-", r.mitigation or "-") for r in risks]
         _add_table(doc, ["风险", "等级", "负责人", "应对措施"], r_rows)
     else:
         doc.add_paragraph("暂无开放风险。")
@@ -393,16 +439,19 @@ def generate_issue_risk_excel(project_id: int, db: Session) -> bytes:
 
     issues = db.query(Issue).filter(Issue.project_id == project_id).order_by(Issue.raised_date.desc()).all()
     for r, issue in enumerate(issues, 2):
+        severity_label = _get_dict_label("issue_severity", issue.severity)
+        source_label = _get_dict_label("issue_source", issue.source)
+        status_label = _get_dict_label("issue_status", issue.status)
         row_data = [
-            r - 1, issue.title, issue.description, issue.severity, issue.source,
+            r - 1, issue.title, issue.description, severity_label, source_label,
             issue.assignee, _fmt_date(issue.raised_date), _fmt_date(issue.due_date),
-            _fmt_date(issue.resolved_date), issue.status, issue.resolution,
+            _fmt_date(issue.resolved_date), status_label, issue.resolution,
         ]
         for c, val in enumerate(row_data, 1):
             cell = ws_i.cell(row=r, column=c, value=val or "")
             _data_style(cell)
-            if c == 4 and issue.severity in SEVERITY_COLOR:  # 严重等级着色
-                _color_cell(cell, SEVERITY_COLOR[issue.severity])
+            if c == 4 and severity_label in SEVERITY_COLOR:  # 严重等级着色
+                _color_cell(cell, SEVERITY_COLOR[severity_label])
 
     _auto_col_width(ws_i)
 
@@ -415,15 +464,19 @@ def generate_issue_risk_excel(project_id: int, db: Session) -> bytes:
 
     risks = db.query(Risk).filter(Risk.project_id == project_id).all()
     for r, risk in enumerate(risks, 2):
+        prob_label = _get_dict_label("risk_prob", risk.probability)
+        impact_label = _get_dict_label("risk_impact", risk.impact)
+        level_label = _get_dict_label("risk_level", risk.level)
+        status_label = _get_dict_label("risk_status", risk.status)
         row_data = [
-            r - 1, risk.title, risk.description, risk.probability, risk.impact,
-            risk.level, risk.assignee, risk.mitigation, risk.status,
+            r - 1, risk.title, risk.description, prob_label, impact_label,
+            level_label, risk.assignee, risk.mitigation, status_label,
         ]
         for c, val in enumerate(row_data, 1):
             cell = ws_r.cell(row=r, column=c, value=val or "")
             _data_style(cell)
-            if c == 6 and risk.level in RISK_COLOR:
-                _color_cell(cell, RISK_COLOR[risk.level])
+            if c == 6 and level_label in RISK_COLOR:
+                _color_cell(cell, RISK_COLOR[level_label])
 
     _auto_col_width(ws_r)
 
@@ -505,14 +558,16 @@ def generate_status_excel(db: Session) -> bytes:
         open_risks = db.query(func.count(Risk.id)).filter(Risk.project_id == p.id, Risk.status == "开放").scalar() or 0
         ms_count = db.query(func.count(Milestone.id)).filter(Milestone.project_id == p.id).scalar() or 0
 
-        row_data = [p.code, p.name, p.client, p.manager, p.phase, p.status,
+        phase_label = _get_dict_label("project_phase", p.phase, db)
+        status_label = _get_dict_label("project_status", p.status)
+        row_data = [p.code, p.name, p.client, p.manager, phase_label, status_label,
                     _fmt_date(p.plan_end), ms_count, open_issues, open_risks,
                     round(used, 1), p.budget_mandays]
         for c, val in enumerate(row_data, 1):
             cell = ws.cell(row=r, column=c, value=val or "")
             _data_style(cell, align="center")
-            if c == 6 and p.status in STATUS_COLOR:  # 状态着色
-                _color_cell(cell, STATUS_COLOR[p.status])
+            if c == 6 and status_label in STATUS_COLOR:  # 状态着色
+                _color_cell(cell, STATUS_COLOR[status_label])
 
     _auto_col_width(ws)
     buf = io.BytesIO()
@@ -582,7 +637,8 @@ def generate_portfolio_report_word(db: Session, report_date: Optional[date] = No
     total = len(all_projects)
     status_count = {}
     for p in all_projects:
-        status_count[p.status] = status_count.get(p.status, 0) + 1
+        status_label = _get_dict_label("project_status", p.status)
+        status_count[status_label] = status_count.get(status_label, 0) + 1
 
     in_progress = sum(status_count.get(s, 0) for s in ["正常", "预警", "延期"])
     completed = status_count.get("已完成", 0)
@@ -624,19 +680,20 @@ def generate_portfolio_report_word(db: Session, report_date: Optional[date] = No
     # 第二部分：重点关注项目（预警 / 延期）
     # ─────────────────────────────────────────────
     _add_heading(doc, "二、重点关注项目（预警 / 延期）", level=2)
-    attention_projects = [p for p in all_projects if p.status in ["预警", "延期"]]
+    attention_projects = [p for p in all_projects if _get_dict_label("project_status", p.status) in ["预警", "延期"]]
     if attention_projects:
         for p in attention_projects:
+            status_label = _get_dict_label("project_status", p.status)
             # 项目名称段
             proj_para = doc.add_paragraph()
-            proj_run = proj_para.add_run(f"▶ [{p.status}] {p.name}（{p.code}）")
+            proj_run = proj_para.add_run(f"▶ [{status_label}] {p.name}（{p.code}）")
             _set_word_font(proj_run)
             proj_run.bold = True
-            proj_run.font.color.rgb = RGBColor(0xFF, 0x40, 0x00) if p.status == "延期" else RGBColor(0xFF, 0xC0, 0x00)
+            proj_run.font.color.rgb = RGBColor(0xFF, 0x40, 0x00) if status_label == "延期" else RGBColor(0xFF, 0xC0, 0x00)
 
             # 项目基本信息
             detail_rows = [
-                (p.code, p.name, p.manager or "-", p.phase, p.status,
+                (p.code, p.name, p.manager or "-", _get_dict_label("project_phase", p.phase, db), status_label,
                  _fmt_date(p.plan_end), _fmt_date(p.actual_end) if p.actual_end else "进行中")
             ]
             # 该项目高级问题
@@ -646,7 +703,7 @@ def generate_portfolio_report_word(db: Session, report_date: Optional[date] = No
                 Issue.status != "已关闭"
             ).all()
             if proj_issues:
-                issue_rows = [(i.title, i.severity, i.assignee or "-", _fmt_date(i.due_date), i.status) for i in proj_issues]
+                issue_rows = [(i.title, _get_dict_label("issue_severity", i.severity), i.assignee or "-", _fmt_date(i.due_date), _get_dict_label("issue_status", i.status)) for i in proj_issues]
                 doc.add_paragraph("  高危未关闭问题：").runs[0].italic = True
                 _add_table(doc, ["问题标题", "严重等级", "负责人", "期望解决", "状态"], issue_rows)
             # 高风险
@@ -656,7 +713,7 @@ def generate_portfolio_report_word(db: Session, report_date: Optional[date] = No
                 Risk.status == "开放"
             ).all()
             if proj_risks:
-                risk_rows = [(r.title, r.probability, r.impact, r.level or "-", r.mitigation or "-") for r in proj_risks]
+                risk_rows = [(r.title, _get_dict_label("risk_prob", r.probability), _get_dict_label("risk_impact", r.impact), _get_dict_label("risk_level", r.level) or "-", r.mitigation or "-") for r in proj_risks]
                 doc.add_paragraph("  高影响开放风险：").runs[0].italic = True
                 _add_table(doc, ["风险标题", "概率", "影响", "等级", "应对措施"], risk_rows)
     else:
@@ -678,8 +735,8 @@ def generate_portfolio_report_word(db: Session, report_date: Optional[date] = No
         # 查询项目名称
         proj_map = {p.id: p.name for p in all_projects}
         i_rows = [
-            (proj_map.get(i.project_id, "?"), i.title, i.severity, i.assignee or "-",
-             _fmt_date(i.due_date), i.status)
+            (proj_map.get(i.project_id, "?"), i.title, _get_dict_label("issue_severity", i.severity), i.assignee or "-",
+             _fmt_date(i.due_date), _get_dict_label("issue_status", i.status))
             for i in top_issues
         ]
         _add_table(doc, ["所属项目", "问题标题", "严重等级", "负责人", "期望解决日期", "状态"], i_rows)
@@ -696,8 +753,8 @@ def generate_portfolio_report_word(db: Session, report_date: Optional[date] = No
     if top_risks:
         proj_map = {p.id: p.name for p in all_projects}
         r_rows = [
-            (proj_map.get(r.project_id, "?"), r.title, r.probability, r.impact,
-             r.level or "-", r.assignee or "-", r.mitigation or "-")
+            (proj_map.get(r.project_id, "?"), r.title, _get_dict_label("risk_prob", r.probability), _get_dict_label("risk_impact", r.impact),
+             _get_dict_label("risk_level", r.level) or "-", r.assignee or "-", r.mitigation or "-")
             for r in top_risks
         ]
         _add_table(doc, ["所属项目", "风险标题", "概率", "影响", "等级", "负责人", "应对措施"], r_rows)
@@ -737,7 +794,7 @@ def generate_portfolio_report_word(db: Session, report_date: Optional[date] = No
     ).order_by(Milestone.plan_date).all()
 
     if upcoming:
-        up_rows = [(proj_map.get(m.project_id, "?"), m.name, _fmt_date(m.plan_date), m.status) for m in upcoming]
+        up_rows = [(proj_map.get(m.project_id, "?"), m.name, _fmt_date(m.plan_date), _get_dict_label("milestone_status", m.status)) for m in upcoming]
         _add_table(doc, ["所属项目", "里程碑", "计划日期", "当前状态"], up_rows)
     else:
         doc.add_paragraph("未来14天内无计划中的里程碑。")
@@ -751,7 +808,7 @@ def generate_portfolio_report_word(db: Session, report_date: Optional[date] = No
     ).order_by(Milestone.plan_date).all()
 
     if overdue:
-        od_rows = [(proj_map.get(m.project_id, "?"), m.name, _fmt_date(m.plan_date), m.status) for m in overdue]
+        od_rows = [(proj_map.get(m.project_id, "?"), m.name, _fmt_date(m.plan_date), _get_dict_label("milestone_status", m.status)) for m in overdue]
         _add_table(doc, ["所属项目", "里程碑", "计划日期", "状态"], od_rows)
         # 标红逾期里程碑行（最后一列）
     else:
@@ -762,7 +819,7 @@ def generate_portfolio_report_word(db: Session, report_date: Optional[date] = No
     # ─────────────────────────────────────────────
     doc.add_paragraph()
     _add_heading(doc, "五、项目状态一览表", level=2)
-    active_projects = [p for p in all_projects if p.status != "已完成"]
+    active_projects = [p for p in all_projects if _get_dict_label("project_status", p.status) != "已完成"]
     if active_projects:
         p_rows = []
         for p in active_projects:
@@ -775,7 +832,7 @@ def generate_portfolio_report_word(db: Session, report_date: Optional[date] = No
             used = db.query(func.sum(ManDay.days)).filter(ManDay.project_id == p.id).scalar() or 0
             budget_pct = f"{min(int(used / p.budget_mandays * 100), 100)}%" if p.budget_mandays else "N/A"
             p_rows.append((
-                p.code, p.name, p.manager or "-", p.phase, p.status,
+                p.code, p.name, p.manager or "-", _get_dict_label("project_phase", p.phase, db), _get_dict_label("project_status", p.status),
                 _fmt_date(p.plan_end), open_issues_count, open_risks_count, budget_pct
             ))
         _add_table(doc, [
@@ -825,14 +882,16 @@ def generate_portfolio_excel(db: Session, report_date: Optional[date] = None) ->
         open_i = db.query(func.count(Issue.id)).filter(Issue.project_id == p.id, Issue.status != "已关闭").scalar() or 0
         open_r = db.query(func.count(Risk.id)).filter(Risk.project_id == p.id, Risk.status == "开放").scalar() or 0
         pct = int(used / p.budget_mandays * 100) if p.budget_mandays else 0
-        row_data = [p.code, p.name, p.client or "", p.manager or "", p.phase, p.status,
+        phase_label = _get_dict_label("project_phase", p.phase, db)
+        status_label = _get_dict_label("project_status", p.status)
+        row_data = [p.code, p.name, p.client or "", p.manager or "", phase_label, status_label,
                     _fmt_date(p.plan_start), _fmt_date(p.plan_end),
                     p.budget_mandays, round(used, 1), f"{pct}%", open_i, open_r]
         for c, val in enumerate(row_data, 1):
             cell = ws1.cell(row=r, column=c, value=val if val is not None else "")
             _data_style(cell, align="center" if c > 6 else "left")
-            if c == 6 and p.status in STATUS_COLOR:
-                _color_cell(cell, STATUS_COLOR[p.status])
+            if c == 6 and status_label in STATUS_COLOR:
+                _color_cell(cell, STATUS_COLOR[status_label])
     _auto_col_width(ws1)
 
     # ── Sheet 2: 全局高严重问题 ────────────────────
@@ -846,9 +905,9 @@ def generate_portfolio_excel(db: Session, report_date: Optional[date] = None) ->
         Issue.status != "已关闭", Issue.severity == "高"
     ).order_by(Issue.due_date).all()
     for r, i in enumerate(top_issues, 2):
-        row_data = [proj_map.get(i.project_id, "?"), i.title, i.description, i.severity,
-                    i.source, i.assignee, _fmt_date(i.raised_date), _fmt_date(i.due_date),
-                    _fmt_date(i.resolved_date), i.status, i.resolution]
+        row_data = [proj_map.get(i.project_id, "?"), i.title, i.description, _get_dict_label("issue_severity", i.severity),
+                    _get_dict_label("issue_source", i.source), i.assignee, _fmt_date(i.raised_date), _fmt_date(i.due_date),
+                    _fmt_date(i.resolved_date), _get_dict_label("issue_status", i.status), i.resolution]
         for c, val in enumerate(row_data, 1):
             cell = ws2.cell(row=r, column=c, value=val or "")
             _data_style(cell)
@@ -867,12 +926,12 @@ def generate_portfolio_excel(db: Session, report_date: Optional[date] = None) ->
     ).all()
     for r, risk in enumerate(top_risks, 2):
         row_data = [proj_map.get(risk.project_id, "?"), risk.title, risk.description,
-                    risk.probability, risk.impact, risk.level, risk.assignee, risk.mitigation, risk.status]
+                    _get_dict_label("risk_prob", risk.probability), _get_dict_label("risk_impact", risk.impact), _get_dict_label("risk_level", risk.level), risk.assignee, risk.mitigation, _get_dict_label("risk_status", risk.status)]
         for c, val in enumerate(row_data, 1):
             cell = ws3.cell(row=r, column=c, value=val or "")
             _data_style(cell)
-            if c == 6 and risk.level in RISK_COLOR:
-                _color_cell(cell, RISK_COLOR[risk.level])
+            if c == 6 and _get_dict_label("risk_level", risk.level) in RISK_COLOR:
+                _color_cell(cell, RISK_COLOR[_get_dict_label("risk_level", risk.level)])
     _auto_col_width(ws3)
 
     # ── Sheet 4: 逾期里程碑 ───────────────────────
@@ -888,7 +947,7 @@ def generate_portfolio_excel(db: Session, report_date: Optional[date] = None) ->
     for r, m in enumerate(overdue_ms, 2):
         overdue_days = (today - m.plan_date).days if m.plan_date else 0
         row_data = [proj_map.get(m.project_id, "?"), m.name, _fmt_date(m.plan_date),
-                    m.status, overdue_days, m.description or ""]
+                    _get_dict_label("milestone_status", m.status), overdue_days, m.description or ""]
         for c, val in enumerate(row_data, 1):
             cell = ws4.cell(row=r, column=c, value=val if val is not None else "")
             _data_style(cell)

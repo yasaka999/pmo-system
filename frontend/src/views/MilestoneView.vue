@@ -29,7 +29,7 @@
         <el-table-column prop="plan_end" label="计划结束" width="110" />
         <el-table-column prop="status" label="状态" width="90">
           <template #default="{ row }">
-            <el-tag :type="msTagType(row.status)" size="small">{{ getDictLabel('milestone_status', row.status) }}</el-tag>
+            <el-tag :type="msTagType(row.status)" size="small">{{ getDictLabel('task_status', row.status) }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="progress" label="完成度" width="120">
@@ -53,7 +53,7 @@
           <div class="m-card" v-for="task in tasksByMs(ms.id)" :key="task.id">
             <div class="m-card-header">
               <div class="m-card-title">{{ task.name }}</div>
-              <el-tag :type="msTagType(task.status)" size="small">{{ getDictLabel('milestone_status', task.status) }}</el-tag>
+              <el-tag :type="msTagType(task.status)" size="small">{{ getDictLabel('task_status', task.status) }}</el-tag>
             </div>
             <div class="m-card-body">
               <div class="m-field"><span class="m-field-label">负责人</span><span class="m-field-value">{{ task.assignee || '-' }}</span></div>
@@ -108,7 +108,7 @@
         </el-row>
         <el-form-item label="状态">
           <el-select v-model="taskForm.status" style="width:100%">
-            <el-option v-for="s in statusOptions" :key="s.value" :label="s.label" :value="s.value" />
+            <el-option v-for="s in taskStatusOptions" :key="s.value" :label="s.label" :value="s.value" />
           </el-select>
         </el-form-item>
         <el-form-item label="完成度(%)"><el-slider v-model="taskForm.progress" :step="5" show-input /></el-form-item>
@@ -142,6 +142,7 @@ const editTaskId = ref(null)
 const currentMsId = ref(null)
 
 const statusOptions = computed(() => dictStore.getOptions('milestone_status'))
+const taskStatusOptions = computed(() => dictStore.getOptions('task_status'))
 
 // 字典值转中文标签
 function getDictLabel(category, value) {
@@ -150,7 +151,7 @@ function getDictLabel(category, value) {
 }
 
 const msForm = ref({ name:'', status:'ms_notstart', plan_date:null, actual_date:null, description:'', order_index:0 })
-const taskForm = ref({ name:'', assignee:'', plan_start:null, plan_end:null, status:'ms_notstart', progress:0, notes:'' })
+const taskForm = ref({ name:'', assignee:'', plan_start:null, plan_end:null, status:'ts_planned', progress:0, notes:'' })
 
 async function load() {
   milestones.value = await milestoneApi.list(pid)
@@ -201,7 +202,7 @@ function openTaskDialog(msId, task = null) {
       actual_end: parseDate(task.actual_end)
     }
   } else {
-    taskForm.value = { name:'', assignee:'', plan_start:null, plan_end:null, status:'ms_notstart', progress:0, notes:'' }
+    taskForm.value = { name:'', assignee:'', plan_start:null, plan_end:null, status:'ts_planned', progress:0, notes:'' }
   }
   taskDlg.value = true
 }
