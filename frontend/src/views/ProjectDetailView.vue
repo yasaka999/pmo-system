@@ -101,7 +101,7 @@ onMounted(async () => {
 })
 
 function statusType(s) {
-  return { '正常': 'success', '预警': 'warning', '延期': 'danger', '已完成': 'info', '暂停': '' }[s] || ''
+  return { 'st_normal': 'success', 'st_warn': 'warning', 'st_delay': 'danger', 'st_done': 'info', 'st_pause': '' }[s] || ''
 }
 </script>
 

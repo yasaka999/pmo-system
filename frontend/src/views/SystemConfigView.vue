@@ -20,8 +20,9 @@
           <div class="section-group">
             <ConfigSection
               title="项目阶段"
-              desc="项目生命周期阶段选项"
+              desc="项目生命周期阶段选项（点击颜色圆点可设置标签颜色）"
               :items="getItems('project_phase')"
+              show-color
               @add="(label) => addItem('project_phase', label)"
               @remove="removeItem"
             />

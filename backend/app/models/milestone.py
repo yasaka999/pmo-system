@@ -33,7 +33,7 @@ class Task(Base):
     actual_start = Column(Date, comment="实际开始")
     actual_end = Column(Date, comment="实际结束")
     progress = Column(Integer, default=0, comment="完成比例 0-100")
-    status = Column(String(20), default="ms_notstart", comment="状态：ms_notstart=未开始/ms_inprog=进行中/ms_done=已完成/ms_delay=延期")
+    status = Column(String(20), default="ts_planned", comment="状态：ts_planned=计划/ts_inprog=进行中/ts_completed=已完成/ts_delayed=延期")
     notes = Column(Text, comment="备注")
     created_at = Column(DateTime, server_default=func.now())
 

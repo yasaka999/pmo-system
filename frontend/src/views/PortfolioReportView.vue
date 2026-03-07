@@ -69,7 +69,7 @@
               </el-table-column>
               <el-table-column prop="status" label="状态" width="72" align="center">
                 <template #default="{ row }">
-                  <el-tag :type="statusType(row.status)" size="small">{{ row.status }}</el-tag>
+                  <el-tag :type="statusType(row.status)" size="small">{{ statusLabel(row.status) }}</el-tag>
                 </template>
               </el-table-column>
               <el-table-column prop="manager" label="项目经理" width="90" />
@@ -202,26 +202,29 @@ const s = computed(() => {
   const ps = projects.value
   return {
     total: ps.length,
-    inProgress: ps.filter(p => ['正常', '预警'].includes(p.status)).length,
-    done: ps.filter(p => p.status === '已完成').length,
-    normal: ps.filter(p => p.status === '正常').length,
-    warn: ps.filter(p => p.status === '预警').length,
-    delay: ps.filter(p => p.status === '延期').length,
+    inProgress: ps.filter(p => ['st_normal', 'st_warn'].includes(p.status)).length,
+    done: ps.filter(p => p.status === 'st_done').length,
+    normal: ps.filter(p => p.status === 'st_normal').length,
+    warn: ps.filter(p => p.status === 'st_warn').length,
+    delay: ps.filter(p => p.status === 'st_delay').length,
   }
 })
 
 // ── 重点关注项目（预警+延期+暂停） ──────────────────
 const attentionProjects = computed(() =>
   projects.value
-    .filter(p => ['预警', '延期', '暂停'].includes(p.status))
+    .filter(p => ['st_warn', 'st_delay', 'st_pause'].includes(p.status))
     .sort((a, b) => {
-      const order = { '延期': 0, '预警': 1, '暂停': 2 }
+      const order = { 'st_delay': 0, 'st_warn': 1, 'st_pause': 2 }
       return (order[a.status] ?? 9) - (order[b.status] ?? 9)
     })
 )
 
 function statusType(s) {
-  return { '正常': 'success', '预警': 'warning', '延期': 'danger', '暂停': 'info', '已完成': '' }[s] || ''
+  return { 'st_normal': 'success', 'st_warn': 'warning', 'st_delay': 'danger', 'st_pause': 'info', 'st_done': '' }[s] || ''
+}
+function statusLabel(s) {
+  return { 'st_normal': '正常', 'st_warn': '预警', 'st_delay': '延期', 'st_pause': '暂停', 'st_done': '已完成' }[s] || s
 }
 function issueStatusType(s) {
   return { '待处理': 'danger', '处理中': 'warning', '已关闭': 'success' }[s] || ''

@@ -60,6 +60,12 @@ DICT_DATA = [
     {"category": "milestone_status", "code": "ms_done",     "label": "已完成", "color": "success", "sort_order": 3},
     {"category": "milestone_status", "code": "ms_delay",    "label": "延期",   "color": "danger",  "sort_order": 4},
 
+    # ── 任务状态 ──────────────────────────────
+    {"category": "task_status", "code": "ts_planned",   "label": "计划",     "color": "info",    "sort_order": 1},
+    {"category": "task_status", "code": "ts_inprog",    "label": "进行中",   "color": "primary", "sort_order": 2},
+    {"category": "task_status", "code": "ts_completed", "label": "已完成",   "color": "success", "sort_order": 3},
+    {"category": "task_status", "code": "ts_delayed",   "label": "延期",     "color": "danger",  "sort_order": 4},
+
     # ── 问题严重等级 ──────────────────────────
     {"category": "issue_severity", "code": "isev_h", "label": "高", "color": "danger",  "sort_order": 1},
     {"category": "issue_severity", "code": "isev_m", "label": "中", "color": "warning", "sort_order": 2},
@@ -153,6 +159,10 @@ if __name__ == "__main__":
     print("  PMO 系统初始化（基础数据）")
     print("=" * 55)
 
+    # 创建所有表
+    print("📦 创建数据库表...")
+    Base.metadata.create_all(bind=db.get_bind())
+    
     init_admin()
     init_dicts()
 
