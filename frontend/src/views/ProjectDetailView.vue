@@ -33,6 +33,7 @@
         <el-button size="small" @click="$router.push(`/projects/${id}/issues`)"><el-icon><Warning /></el-icon> 问题台账</el-button>
         <el-button size="small" @click="$router.push(`/projects/${id}/risks`)"><el-icon><Bell /></el-icon> 风险台账</el-button>
         <el-button size="small" @click="$router.push(`/projects/${id}/mandays`)"><el-icon><Timer /></el-icon> 人天管理</el-button>
+        <el-button size="small" @click="$router.push(`/projects/${id}/weekly-progress`)"><el-icon><Document /></el-icon> 周报进展</el-button>
         <el-button size="small" type="success" @click="$router.push(`/projects/${id}/reports`)"><el-icon><Document /></el-icon> 生成报告</el-button>
       </div>
     </div>

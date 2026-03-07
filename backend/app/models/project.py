@@ -35,5 +35,6 @@ class Project(Base):
     issues = relationship("Issue", back_populates="project", cascade="all, delete-orphan")
     risks = relationship("Risk", back_populates="project", cascade="all, delete-orphan")
     mandays = relationship("ManDay", back_populates="project", cascade="all, delete-orphan")
+    weekly_progresses = relationship("WeeklyProgress", back_populates="project", cascade="all, delete-orphan", order_by="desc(WeeklyProgress.record_date)")
     creator = relationship("User", foreign_keys=[created_by])
 

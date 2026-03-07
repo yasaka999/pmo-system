@@ -105,6 +105,14 @@ export const mandayApi = {
     stats: (pid) => api.get(`/projects/${pid}/mandays/stats`),
 }
 
+// ─── 周报进展 ──────────────────────────────────
+export const weeklyProgressApi = {
+    list: (pid) => api.get(`/projects/${pid}/weekly-progress`),
+    create: (pid, data) => api.post(`/projects/${pid}/weekly-progress`, data),
+    update: (id, data) => api.put(`/weekly-progress/${id}`, data),
+    remove: (id) => api.delete(`/weekly-progress/${id}`),
+}
+
 // ─── 报告 ─────────────────────────────────────
 export const reportApi = {
     weekly: (pid, date) => {

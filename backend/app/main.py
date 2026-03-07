@@ -6,7 +6,7 @@ from app.db.session import engine
 from app.db.base import Base
 
 # 导入所有模型，确保建表时能发现
-from app.models import user, project, milestone, issue, risk, manday, sys_dict  # noqa
+from app.models import user, project, milestone, issue, risk, manday, sys_dict, weekly_progress  # noqa
 
 app = FastAPI(
     title=settings.APP_NAME,
