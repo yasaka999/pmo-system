@@ -92,6 +92,14 @@ npm run dev        # 开发模式，访问 http://localhost:3000
 | `pm_li` | `pm123` | 项目成员（仅管理自己的项目） |
 | `viewer1` | `view123` | 只读用户 |
 
+## 📚 文档
+
+- [功能列表](docs/FEATURES.md) - 完整功能模块说明、API 接口列表、数据字典
+- [操作手册](docs/MANUAL.md) - 用户操作指南、常见问题解答
+- [API 文档](API.md) - RESTful API 接口详细说明
+- [架构文档](ARCHITECTURE.md) - 系统架构设计、技术选型说明
+- [部署指南](DEPLOYMENT.md) - 生产环境部署步骤
+
 ## 📋 角色权限说明
 
 | 功能 | member | pmo | admin |
