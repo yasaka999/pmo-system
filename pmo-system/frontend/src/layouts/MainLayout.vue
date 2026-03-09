@@ -24,7 +24,7 @@
           <el-icon><FolderOpened /></el-icon>
           <template #title>项目列表</template>
         </el-menu-item>
-        <el-menu-item v-if="['admin','pmo'].includes(auth.user?.role)" index="/portfolio-report">
+        <el-menu-item v-if="auth.user && ['admin','pmo'].includes(auth.user.role)" index="/portfolio-report">
           <el-icon><DataAnalysis /></el-icon>
           <template #title>整体报告</template>
         </el-menu-item>
@@ -148,7 +148,7 @@
           <el-icon><FolderOpened /></el-icon>
           <template #title>项目列表</template>
         </el-menu-item>
-        <el-menu-item v-if="['admin','pmo'].includes(auth.user?.role)" index="/portfolio-report">
+        <el-menu-item v-if="auth.user && ['admin','pmo'].includes(auth.user.role)" index="/portfolio-report">
           <el-icon><DataAnalysis /></el-icon>
           <template #title>整体报告</template>
         </el-menu-item>
@@ -182,7 +182,7 @@
           </el-menu-item>
         </template>
 
-        <template v-if="auth.user?.role === 'admin'">
+        <template v-if="auth.user && auth.user.role === 'admin'">
           <el-divider style="border-color:#2d3e58;margin:8px 0"/>
           <div class="sidebar-section">系统管理</div>
           <el-menu-item index="/system/users">
