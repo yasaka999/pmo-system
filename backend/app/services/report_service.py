@@ -75,7 +75,7 @@ DICT_LABELS = {
     "risk_prob": {"rp_h": "高", "rp_m": "中", "rp_l": "低"},
     "risk_impact": {"ri_h": "高", "ri_m": "中", "ri_l": "低"},
     "risk_level": {"rl_h": "高", "rl_m": "中", "rl_l": "低"},
-    "risk_status": {"rs_open": "开放", "rs_mitig": "已缓解", "rs_closed": "已关闭"},
+    "risk_status": {"rs_open": "开放", "rs_doing": "进行中", "rs_mitig": "已缓解", "rs_closed": "已关闭"},
     "milestone_status": {"ms_notstart": "未开始", "ms_inprog": "进行中", "ms_done": "已完成", "ms_delay": "延期"},
 }
 
@@ -276,7 +276,7 @@ def generate_weekly_report(project_id: int, db: Session, report_date: Optional[d
     # 本周任务
     doc.add_paragraph()
     _add_heading(doc, "三、本周工作情况", level=2)
-    tasks = db.query(Task).filter(Task.project_id == project_id, Task.status.in_(["进行中", "已完成"])).all()
+    tasks = db.query(Task).filter(Task.project_id == project_id, Task.status.in_(["ms_inprog", "ms_done"])).all()
     if tasks:
         task_rows = [
             (t.name, t.assignee or "-", t.status, f"{t.progress}%", _fmt_date(t.plan_end), t.notes or "-")
@@ -289,7 +289,7 @@ def generate_weekly_report(project_id: int, db: Session, report_date: Optional[d
     # 未开始任务 = 下周计划
     doc.add_paragraph()
     _add_heading(doc, "四、下周工作计划", level=2)
-    next_tasks = db.query(Task).filter(Task.project_id == project_id, Task.status == "未开始").all()
+    next_tasks = db.query(Task).filter(Task.project_id == project_id, Task.status == "ms_notstart").all()
     if next_tasks:
         nt_rows = [
             (t.name, t.assignee or "-", _fmt_date(t.plan_start), _fmt_date(t.plan_end))
@@ -302,7 +302,7 @@ def generate_weekly_report(project_id: int, db: Session, report_date: Optional[d
     # 问题
     doc.add_paragraph()
     _add_heading(doc, "五、问题跟踪", level=2)
-    issues = db.query(Issue).filter(Issue.project_id == project_id, Issue.status != "已关闭").all()
+    issues = db.query(Issue).filter(Issue.project_id == project_id, Issue.status != "ist_closed").all()
     if issues:
         i_rows = [(i.title, _get_dict_label("issue_severity", i.severity), i.assignee or "-", _fmt_date(i.due_date), _get_dict_label("issue_status", i.status)) for i in issues]
         _add_table(doc, ["问题", "等级", "负责人", "期望解决日期", "状态"], i_rows)
@@ -312,7 +312,7 @@ def generate_weekly_report(project_id: int, db: Session, report_date: Optional[d
     # 风险
     doc.add_paragraph()
     _add_heading(doc, "六、风险跟踪", level=2)
-    risks = db.query(Risk).filter(Risk.project_id == project_id, Risk.status == "开放").all()
+    risks = db.query(Risk).filter(Risk.project_id == project_id, Risk.status.in_(["rs_open", "rs_doing"])).all()
     if risks:
         r_rows = [(r.title, _get_dict_label("risk_prob", r.probability), _get_dict_label("risk_impact", r.impact), _get_dict_label("risk_level", r.level) or "-", r.assignee or "-", r.mitigation or "-") for r in risks]
         _add_table(doc, ["风险", "概率", "影响", "等级", "负责人", "应对措施"], r_rows)
@@ -400,7 +400,7 @@ def generate_monthly_report(project_id: int, year: int, month: int, db: Session)
     # 未关闭问题与风险
     doc.add_paragraph()
     _add_heading(doc, "四、未关闭问题清单", level=2)
-    issues = db.query(Issue).filter(Issue.project_id == project_id, Issue.status != "已关闭").all()
+    issues = db.query(Issue).filter(Issue.project_id == project_id, Issue.status != "ist_closed").all()
     if issues:
         i_rows = [(i.title, _get_dict_label("issue_severity", i.severity), i.assignee or "-", _fmt_date(i.due_date), _get_dict_label("issue_status", i.status)) for i in issues]
         _add_table(doc, ["问题", "等级", "负责人", "期望解决", "状态"], i_rows)
@@ -409,7 +409,7 @@ def generate_monthly_report(project_id: int, year: int, month: int, db: Session)
 
     doc.add_paragraph()
     _add_heading(doc, "五、开放风险清单", level=2)
-    risks = db.query(Risk).filter(Risk.project_id == project_id, Risk.status == "开放").all()
+    risks = db.query(Risk).filter(Risk.project_id == project_id, Risk.status.in_(["rs_open", "rs_doing"])).all()
     if risks:
         r_rows = [(r.title, _get_dict_label("risk_level", r.level) or "-", r.assignee or "-", r.mitigation or "-") for r in risks]
         _add_table(doc, ["风险", "等级", "负责人", "应对措施"], r_rows)
@@ -554,8 +554,8 @@ def generate_status_excel(db: Session) -> bytes:
     projects = db.query(Project).all()
     for r, p in enumerate(projects, 2):
         used = db.query(func.sum(ManDay.days)).filter(ManDay.project_id == p.id).scalar() or 0
-        open_issues = db.query(func.count(Issue.id)).filter(Issue.project_id == p.id, Issue.status != "已关闭").scalar() or 0
-        open_risks = db.query(func.count(Risk.id)).filter(Risk.project_id == p.id, Risk.status == "开放").scalar() or 0
+        open_issues = db.query(func.count(Issue.id)).filter(Issue.project_id == p.id, Issue.status != "ist_closed").scalar() or 0
+        open_risks = db.query(func.count(Risk.id)).filter(Risk.project_id == p.id, Risk.status.in_(["rs_open", "rs_doing"])).scalar() or 0
         ms_count = db.query(func.count(Milestone.id)).filter(Milestone.project_id == p.id).scalar() or 0
 
         phase_label = _get_dict_label("project_phase", p.phase, db)
@@ -647,14 +647,14 @@ def generate_portfolio_report_word(db: Session, report_date: Optional[date] = No
 
     total_budget = sum(p.budget_mandays for p in all_projects)
     total_used = db.query(func.sum(ManDay.days)).scalar() or 0
-    total_issues = db.query(func.count(Issue.id)).filter(Issue.status != "已关闭").scalar() or 0
-    total_risks = db.query(func.count(Risk.id)).filter(Risk.status == "开放").scalar() or 0
+    total_issues = db.query(func.count(Issue.id)).filter(Issue.status != "ist_closed").scalar() or 0
+    total_risks = db.query(func.count(Risk.id)).filter(Risk.status.in_(["rs_open", "rs_doing"])).scalar() or 0
 
     summary_rows = [
         ("项目总数", str(total), "进行中项目", str(in_progress)),
         ("已完成项目", str(completed), "暂停项目", str(paused)),
         ("需重点关注（预警+延期）", str(attention), "未关闭高危问题", str(
-            db.query(func.count(Issue.id)).filter(Issue.status != "已关闭", Issue.severity == "高").scalar() or 0
+            db.query(func.count(Issue.id)).filter(Issue.status != "ist_closed", Issue.severity == "isev_h").scalar() or 0
         )),
         ("全局预算人天", f"{total_budget:.1f}", "已消耗人天（合计）", f"{total_used:.1f}"),
     ]
@@ -699,8 +699,8 @@ def generate_portfolio_report_word(db: Session, report_date: Optional[date] = No
             # 该项目高级问题
             proj_issues = db.query(Issue).filter(
                 Issue.project_id == p.id,
-                Issue.severity == "高",
-                Issue.status != "已关闭"
+                Issue.severity == "isev_h",
+                Issue.status != "ist_closed"
             ).all()
             if proj_issues:
                 issue_rows = [(i.title, _get_dict_label("issue_severity", i.severity), i.assignee or "-", _fmt_date(i.due_date), _get_dict_label("issue_status", i.status)) for i in proj_issues]
@@ -709,8 +709,8 @@ def generate_portfolio_report_word(db: Session, report_date: Optional[date] = No
             # 高风险
             proj_risks = db.query(Risk).filter(
                 Risk.project_id == p.id,
-                Risk.impact == "高",
-                Risk.status == "开放"
+                Risk.impact == "ri_h",
+                Risk.status.in_(["rs_open", "rs_doing"])
             ).all()
             if proj_risks:
                 risk_rows = [(r.title, _get_dict_label("risk_prob", r.probability), _get_dict_label("risk_impact", r.impact), _get_dict_label("risk_level", r.level) or "-", r.mitigation or "-") for r in proj_risks]
@@ -727,8 +727,8 @@ def generate_portfolio_report_word(db: Session, report_date: Optional[date] = No
 
     _add_heading(doc, "3.1 高严重等级未关闭问题 Top 10", level=3)
     top_issues = db.query(Issue).filter(
-        Issue.status != "已关闭",
-        Issue.severity == "高"
+        Issue.status != "ist_closed",
+        Issue.severity == "isev_h"
     ).order_by(Issue.due_date).limit(10).all()
 
     if top_issues:
@@ -746,8 +746,8 @@ def generate_portfolio_report_word(db: Session, report_date: Optional[date] = No
     doc.add_paragraph()
     _add_heading(doc, "3.2 高影响开放风险 Top 10", level=3)
     top_risks = db.query(Risk).filter(
-        Risk.status == "开放",
-        Risk.impact == "高"
+        Risk.status.in_(["rs_open", "rs_doing"]),
+        Risk.impact == "ri_h"
     ).limit(10).all()
 
     if top_risks:
@@ -772,7 +772,7 @@ def generate_portfolio_report_word(db: Session, report_date: Optional[date] = No
     past_14 = today - timedelta(days=14)
     _add_heading(doc, "4.1 近期已达成里程碑（过去14天）", level=3)
     recent_done = db.query(Milestone).filter(
-        Milestone.status == "已完成",
+        Milestone.status == "ms_done",
         Milestone.actual_date >= past_14,
         Milestone.actual_date <= today
     ).order_by(Milestone.actual_date.desc()).all()
@@ -788,7 +788,7 @@ def generate_portfolio_report_word(db: Session, report_date: Optional[date] = No
     doc.add_paragraph()
     _add_heading(doc, "4.2 近期计划里程碑（未来14天）", level=3)
     upcoming = db.query(Milestone).filter(
-        Milestone.status.in_(["未开始", "进行中"]),
+        Milestone.status.in_(["ms_notstart", "ms_inprog"]),
         Milestone.plan_date >= today,
         Milestone.plan_date <= future_14
     ).order_by(Milestone.plan_date).all()
@@ -803,7 +803,7 @@ def generate_portfolio_report_word(db: Session, report_date: Optional[date] = No
     doc.add_paragraph()
     _add_heading(doc, "4.3 已逾期未达成里程碑（⚠️）", level=3)
     overdue = db.query(Milestone).filter(
-        Milestone.status.in_(["未开始", "进行中", "延期"]),
+        Milestone.status.in_(["ms_notstart", "ms_inprog", "ms_delay"]),
         Milestone.plan_date < today
     ).order_by(Milestone.plan_date).all()
 
@@ -824,10 +824,10 @@ def generate_portfolio_report_word(db: Session, report_date: Optional[date] = No
         p_rows = []
         for p in active_projects:
             open_issues_count = db.query(func.count(Issue.id)).filter(
-                Issue.project_id == p.id, Issue.status != "已关闭"
+                Issue.project_id == p.id, Issue.status != "ist_closed"
             ).scalar() or 0
             open_risks_count = db.query(func.count(Risk.id)).filter(
-                Risk.project_id == p.id, Risk.status == "开放"
+                Risk.project_id == p.id, Risk.status.in_(["rs_open", "rs_doing"])
             ).scalar() or 0
             used = db.query(func.sum(ManDay.days)).filter(ManDay.project_id == p.id).scalar() or 0
             budget_pct = f"{min(int(used / p.budget_mandays * 100), 100)}%" if p.budget_mandays else "N/A"
@@ -879,8 +879,8 @@ def generate_portfolio_excel(db: Session, report_date: Optional[date] = None) ->
 
     for r, p in enumerate(all_projects, 4):
         used = db.query(func.sum(ManDay.days)).filter(ManDay.project_id == p.id).scalar() or 0
-        open_i = db.query(func.count(Issue.id)).filter(Issue.project_id == p.id, Issue.status != "已关闭").scalar() or 0
-        open_r = db.query(func.count(Risk.id)).filter(Risk.project_id == p.id, Risk.status == "开放").scalar() or 0
+        open_i = db.query(func.count(Issue.id)).filter(Issue.project_id == p.id, Issue.status != "ist_closed").scalar() or 0
+        open_r = db.query(func.count(Risk.id)).filter(Risk.project_id == p.id, Risk.status.in_(["rs_open", "rs_doing"])).scalar() or 0
         pct = int(used / p.budget_mandays * 100) if p.budget_mandays else 0
         phase_label = _get_dict_label("project_phase", p.phase, db)
         status_label = _get_dict_label("project_status", p.status)
@@ -902,7 +902,7 @@ def generate_portfolio_excel(db: Session, report_date: Optional[date] = None) ->
         cell = ws2.cell(row=1, column=c, value=h)
         _excel_header_style(cell)
     top_issues = db.query(Issue).filter(
-        Issue.status != "已关闭", Issue.severity == "高"
+        Issue.status != "ist_closed", Issue.severity == "isev_h"
     ).order_by(Issue.due_date).all()
     for r, i in enumerate(top_issues, 2):
         row_data = [proj_map.get(i.project_id, "?"), i.title, i.description, _get_dict_label("issue_severity", i.severity),
@@ -922,7 +922,7 @@ def generate_portfolio_excel(db: Session, report_date: Optional[date] = None) ->
         cell = ws3.cell(row=1, column=c, value=h)
         _excel_header_style(cell)
     top_risks = db.query(Risk).filter(
-        Risk.status == "开放", Risk.impact == "高"
+        Risk.status.in_(["rs_open", "rs_doing"]), Risk.impact == "ri_h"
     ).all()
     for r, risk in enumerate(top_risks, 2):
         row_data = [proj_map.get(risk.project_id, "?"), risk.title, risk.description,
@@ -941,7 +941,7 @@ def generate_portfolio_excel(db: Session, report_date: Optional[date] = None) ->
         cell = ws4.cell(row=1, column=c, value=h)
         _excel_header_style(cell)
     overdue_ms = db.query(Milestone).filter(
-        Milestone.status.in_(["未开始", "进行中", "延期"]),
+        Milestone.status.in_(["ms_notstart", "ms_inprog", "ms_delay"]),
         Milestone.plan_date < today
     ).order_by(Milestone.plan_date).all()
     for r, m in enumerate(overdue_ms, 2):

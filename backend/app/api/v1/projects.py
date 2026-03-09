@@ -26,10 +26,10 @@ def _can_manage(project: Project, current_user: User) -> bool:
 def _build_summary(p: Project, db: Session) -> ProjectSummary:
     used = db.query(func.sum(ManDay.days)).filter(ManDay.project_id == p.id).scalar() or 0
     open_issues = db.query(func.count(Issue.id)).filter(
-        Issue.project_id == p.id, Issue.status != "已关闭"
+        Issue.project_id == p.id, Issue.status.notin_(["ist_closed", "已关闭"])
     ).scalar() or 0
     open_risks = db.query(func.count(Risk.id)).filter(
-        Risk.project_id == p.id, Risk.status == "开放"
+        Risk.project_id == p.id, Risk.status.in_(["rs_open", "rs_doing", "开放"])
     ).scalar() or 0
     ms_count = db.query(func.count(Milestone.id)).filter(Milestone.project_id == p.id).scalar() or 0
     return ProjectSummary(

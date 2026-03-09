@@ -146,12 +146,12 @@
                 <el-table-column prop="title" label="问题标题" min-width="180" />
                 <el-table-column prop="severity" label="严重等级" width="90">
                   <template #default="{ row }">
-                    <el-tag :type="{ '高':'danger','中':'warning','低':'success' }[row.severity]" size="small">{{ row.severity }}</el-tag>
+                    <el-tag :type="{ 'isev_h':'danger','isev_m':'warning','isev_l':'success' }[row.severity]" size="small">{{ issueSeverityLabel(row.severity) }}</el-tag>
                   </template>
                 </el-table-column>
                 <el-table-column prop="status" label="状态" width="80">
                   <template #default="{ row }">
-                    <el-tag :type="{ '待处理':'danger','处理中':'warning','已关闭':'info' }[row.status]" size="small">{{ row.status }}</el-tag>
+                    <el-tag :type="{ 'ist_open':'danger','ist_doing':'warning','ist_closed':'info' }[row.status]" size="small">{{ issueStatusLabel(row.status) }}</el-tag>
                   </template>
                 </el-table-column>
                 <el-table-column prop="assignee" label="负责人" width="90" />
@@ -179,12 +179,12 @@
                 <el-table-column prop="title" label="风险标题" min-width="180" />
                 <el-table-column prop="level" label="风险级别" width="90">
                   <template #default="{ row }">
-                    <el-tag :type="{ '极高':'danger','高':'warning','中':'','低':'success' }[row.level]" size="small">{{ row.level }}</el-tag>
+                    <el-tag :type="{ 'rl_h':'danger','rl_m':'warning','rl_l':'success' }[row.level]" size="small">{{ riskLevelLabel(row.level) }}</el-tag>
                   </template>
                 </el-table-column>
                 <el-table-column prop="status" label="状态" width="80">
                   <template #default="{ row }">
-                    <el-tag :type="{ '开放':'danger','已缓解':'warning','已关闭':'info' }[row.status]" size="small">{{ row.status }}</el-tag>
+                    <el-tag :type="{ 'rs_open':'danger','rs_doing':'warning','rs_mitig':'warning','rs_closed':'info' }[row.status]" size="small">{{ riskStatusLabel(row.status) }}</el-tag>
                   </template>
                 </el-table-column>
                 <el-table-column prop="assignee" label="负责人" width="90" />
@@ -214,6 +214,18 @@ function statusLabel(s) {
 }
 function phaseLabel(p) {
   return dictStore.getDictItem('project_phase', p).label || p
+}
+function issueStatusLabel(s) {
+  return dictStore.getDictItem('issue_status', s).label || s
+}
+function issueSeverityLabel(s) {
+  return dictStore.getDictItem('issue_severity', s).label || s
+}
+function riskStatusLabel(s) {
+  return dictStore.getDictItem('risk_status', s).label || s
+}
+function riskLevelLabel(l) {
+  return dictStore.getDictItem('risk_level', l).label || l
 }
 
 const projects = ref([])
@@ -386,7 +398,7 @@ async function openDrawer(code) {
       const results = await Promise.all(
         proj.map(p => issueApi.list(p.id).then(issues => ({
           id: p.id, code: p.code, name: p.name,
-          issues: issues.filter(i => i.status !== '已关闭')
+          issues: issues.filter(i => i.status !== 'ist_closed')
         })))
       )
       issueByProject.value = results.filter(r => r.issues.length > 0)
@@ -400,7 +412,7 @@ async function openDrawer(code) {
       const results = await Promise.all(
         proj.map(p => riskApi.list(p.id).then(risks => ({
           id: p.id, code: p.code, name: p.name,
-          risks: risks.filter(r => r.status === '开放')
+          risks: risks.filter(r => r.status === 'rs_open')
         })))
       )
       riskByProject.value = results.filter(r => r.risks.length > 0)

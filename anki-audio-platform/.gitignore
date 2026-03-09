@@ -36,3 +36,4 @@ storage/apkg/
 .vscode/
 .idea/
 *.swp
+.gitnexus

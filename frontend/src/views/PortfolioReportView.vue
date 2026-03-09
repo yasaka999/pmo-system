@@ -227,10 +227,16 @@ function statusLabel(s) {
   return { 'st_normal': '正常', 'st_warn': '预警', 'st_delay': '延期', 'st_pause': '暂停', 'st_done': '已完成' }[s] || s
 }
 function issueStatusType(s) {
-  return { '待处理': 'danger', '处理中': 'warning', '已关闭': 'success' }[s] || ''
+  return { 'ist_open': 'danger', 'ist_doing': 'warning', 'ist_closed': 'success' }[s] || ''
 }
 function riskStatusType(s) {
-  return { '开放': 'danger', '已缓解': 'warning', '已关闭': 'success' }[s] || ''
+  return { 'rs_open': 'danger', 'rs_mitig': 'warning', 'rs_closed': 'success' }[s] || ''
+}
+function issueStatusLabel(s) {
+  return { 'ist_open': '待处理', 'ist_doing': '处理中', 'ist_closed': '已关闭' }[s] || s
+}
+function riskStatusLabel(s) {
+  return { 'rs_open': '开放', 'rs_mitig': '已缓解', 'rs_closed': '已关闭' }[s] || s
 }
 
 // ── 加载数据 ──────────────────────────────────────────
@@ -256,16 +262,26 @@ async function loadData() {
       if (p.open_issue_count > 0) {
         const issues = await issueApi.list(p.id)
         issues
-          .filter(i => i.severity === '高' && i.status !== '已关闭')
-          .forEach(i => issueList.push({ ...i, projectName: p.name }))
+          .filter(i => i.severity === 'isev_h' && i.status !== 'ist_closed')
+          .forEach(i => issueList.push({
+            ...i,
+            projectName: p.name,
+            severity: { 'isev_h': '高', 'isev_m': '中', 'isev_l': '低' }[i.severity] || i.severity,
+            status: { 'ist_open': '待处理', 'ist_doing': '处理中', 'ist_closed': '已关闭' }[i.status] || i.status
+          }))
       }
 
-      // 高影响风险（影响=高 或 等级极高/高，状态=开放）
+      // 高影响风险（等级极高/高，状态=开放/进行中）
       if (p.open_risk_count > 0) {
         const risks = await riskApi.list(p.id)
         risks
-          .filter(r => r.status === '开放' && ['极高', '高'].includes(r.level))
-          .forEach(r => riskList.push({ ...r, projectName: p.name }))
+          .filter(r => ['rs_open', 'rs_doing'].includes(r.status) && ['rl_vh', 'rl_h'].includes(r.level))
+          .forEach(r => riskList.push({
+            ...r,
+            projectName: p.name,
+            level: { 'rl_vh': '极高', 'rl_h': '高', 'rl_m': '中', 'rl_l': '低' }[r.level] || r.level,
+            status: { 'rs_open': '开放', 'rs_doing': '进行中', 'rs_mitig': '已缓解', 'rs_closed': '已关闭' }[r.status] || r.status
+          }))
       }
 
       // 逾期里程碑（计划日期已过、非已完成）
