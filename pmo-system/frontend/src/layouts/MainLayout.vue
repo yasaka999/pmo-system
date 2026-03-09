@@ -58,7 +58,7 @@
           </el-menu-item>
         </template>
 
-        <template v-if="auth.user?.role === 'admin'">
+        <template v-if="auth.user && auth.user.role === 'admin'">
           <el-divider v-if="!collapsed" style="border-color:#2d3e58;margin:8px 0"/>
           <div v-if="!collapsed" class="sidebar-section">系统管理</div>
           <el-menu-item index="/system/users">
