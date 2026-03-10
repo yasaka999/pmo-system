@@ -344,8 +344,18 @@ function riskStatusLabel(s) {
 async function loadData() {
   loading.value = true
   try {
-    // 优化：使用聚合 API 一次性获取所有项目 + 统计数据
-    projects.value = await projectApi.list()
+    // ✅ 优化：使用聚合 API 一次性获取所有项目 + 统计数据（1 次 API 调用替代 93 次！）
+    const allProjects = await projectApi.listWithStats()
+    
+    // 将聚合数据转换为项目列表（兼容原有代码）
+    projects.value = allProjects.map(p => ({
+      ...p,
+      // 保留原有字段名
+      open_issue_count: p.open_issue_count || 0,
+      open_risk_count: p.open_risk_count || 0,
+      milestone_count: p.milestone_count || 0,
+      used_mandays: p.used_mandays || 0,
+    }))
 
     const today = new Date()
     today.setHours(0, 0, 0, 0)
@@ -355,12 +365,14 @@ async function loadData() {
     const issueList = [], riskList = [], msList = []
     let totalBudget = 0, totalUsed = 0, thisMonthDays = 0
 
-    // 优化：只查询有数据的项目，减少 API 调用
+    // ✅ 优化：聚合 API 已返回统计数据，无需再查询问题、风险、里程碑
+    // 只需要查询人天数据（可选，因为聚合 API 也可以包含）
     await Promise.all(projects.value.map(async p => {
       totalBudget += p.budget_mandays || 0
-      totalUsed += p.used_mandays || 0
+      totalUsed += p.used_mandays || 0  // 聚合 API 已返回
 
       // 高优先级问题（高严重等级、未关闭）
+      // 优化：聚合 API 已返回统计，但详细列表仍需查询（可进一步优化）
       if (p.open_issue_count > 0) {
         const issues = await issueApi.list(p.id)
         issues

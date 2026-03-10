@@ -58,6 +58,7 @@ export const dictApi = {
 // ─── 项目 ─────────────────────────────────────
 export const projectApi = {
     list: (params) => api.get('/projects/', { params }),
+    listWithStats: () => api.get('/projects/all-with-stats'),  // 聚合 API（含统计数据）
     get: (id) => api.get(`/projects/${id}`),
     create: (data) => api.post('/projects/', data),
     update: (id, data) => api.put(`/projects/${id}`, data),
