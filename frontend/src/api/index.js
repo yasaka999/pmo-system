@@ -166,8 +166,11 @@ export const adminApi = {
     reassignOwner: (projectId, newOwnerId) => api.put(`/admin/project/${projectId}/owner`, { new_owner_id: newOwnerId }),
 }
 
-// 挂载到 api 对象上，方便组件使用
-api.admin = adminApi
+// ============ 操作日志 ============
+export const operationLogsApi = {
+    list: (params) => api.get('/operation-logs/', { params }),
+    users: () => api.get('/operation-logs/users'),
+}
 
 // 通用下载函数
 export function downloadBlob(response, filename) {
@@ -180,4 +183,3 @@ export function downloadBlob(response, filename) {
 }
 
 export default api
-

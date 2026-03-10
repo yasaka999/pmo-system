@@ -1,11 +1,12 @@
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.schemas import schemas
 from app.crud import crud_sys_dict
 from app.core.security import get_current_active_user
+from app.core.logging import record_operation
 from app.models.user import User
 
 router = APIRouter()
@@ -31,6 +32,7 @@ def read_sys_dicts(
 @router.post("/", response_model=schemas.SysDictOut)
 def create_sys_dict(
     sys_dict: schemas.SysDictCreate,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
@@ -39,12 +41,15 @@ def create_sys_dict(
     """
     if current_user.role not in ["admin", "pmo"]:
          raise HTTPException(status_code=403, detail="没有权限执行此操作")
-    return crud_sys_dict.create_sys_dict(db=db, sys_dict=sys_dict)
+    result = crud_sys_dict.create_sys_dict(db=db, sys_dict=sys_dict)
+    record_operation("CREATE", "系统配置", f"创建字典项：{sys_dict.code}", request, current_user)
+    return result
 
 @router.put("/{dict_id}", response_model=schemas.SysDictOut)
 def update_sys_dict(
     dict_id: int,
     sys_dict: schemas.SysDictUpdate,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
@@ -57,11 +62,13 @@ def update_sys_dict(
     db_dict = crud_sys_dict.update_sys_dict(db=db, dict_id=dict_id, sys_dict=sys_dict)
     if db_dict is None:
         raise HTTPException(status_code=404, detail="字典项不存在")
+    record_operation("UPDATE", "系统配置", f"更新字典项：{dict_id}", request, current_user)
     return db_dict
 
 @router.delete("/{dict_id}")
 def delete_sys_dict(
     dict_id: int,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
@@ -74,11 +81,13 @@ def delete_sys_dict(
     success = crud_sys_dict.delete_sys_dict(db=db, dict_id=dict_id)
     if not success:
         raise HTTPException(status_code=404, detail="字典项不存在")
+    record_operation("DELETE", "系统配置", f"删除字典项：{dict_id}", request, current_user)
     return {"message": "删除成功"}
 
 @router.post("/batch-save")
 def batch_save_sys_dicts(
     data: schemas.SysDictBatchSave,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
@@ -97,6 +106,8 @@ def batch_save_sys_dicts(
     created, updated, deleted = crud_sys_dict.batch_save_sys_dicts(db, items)
     
     print(f"=== API result: created={created}, updated={updated}, deleted={deleted} ===")
+    
+    record_operation("UPDATE", "系统配置", f"批量保存字典：新增{created}，更新{updated}，删除{deleted}", request, current_user)
     
     return {
         "message": "保存成功",

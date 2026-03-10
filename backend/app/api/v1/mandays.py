@@ -1,6 +1,7 @@
 from typing import List, Optional
 from datetime import date
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
+from app.core.logging import record_operation
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from app.db.session import get_db
@@ -30,18 +31,20 @@ def list_mandays(
 
 
 @router.post("/projects/{project_id}/mandays", response_model=ManDayOut, status_code=201)
-def create_manday(project_id: int, md_in: ManDayCreate, db: Session = Depends(get_db), _: User = Depends(get_current_user)):
+def create_manday(project_id: int, md_in: ManDayCreate, request: Request, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     if not db.query(Project).filter(Project.id == project_id).first():
         raise HTTPException(status_code=404, detail="项目不存在")
     md = ManDay(**{**md_in.model_dump(), "project_id": project_id})
     db.add(md)
     db.commit()
     db.refresh(md)
+    # 记录操作日志
+    record_operation("CREATE", "工时管理", f"创建工时记录：{md.staff_name}", request, current_user)
     return md
 
 
 @router.put("/mandays/{md_id}", response_model=ManDayOut)
-def update_manday(md_id: int, md_in: ManDayUpdate, db: Session = Depends(get_db), _: User = Depends(get_current_user)):
+def update_manday(md_id: int, md_in: ManDayUpdate, request: Request, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     md = db.query(ManDay).filter(ManDay.id == md_id).first()
     if not md:
         raise HTTPException(status_code=404, detail="记录不存在")
@@ -49,16 +52,19 @@ def update_manday(md_id: int, md_in: ManDayUpdate, db: Session = Depends(get_db)
         setattr(md, k, v)
     db.commit()
     db.refresh(md)
+    record_operation("UPDATE", "工时管理", f"更新工时记录：{md_id}", request, current_user)
     return md
 
 
 @router.delete("/mandays/{md_id}", status_code=204)
-def delete_manday(md_id: int, db: Session = Depends(get_db), _: User = Depends(get_current_user)):
+def delete_manday(md_id: int, request: Request, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     md = db.query(ManDay).filter(ManDay.id == md_id).first()
     if not md:
         raise HTTPException(status_code=404, detail="记录不存在")
     db.delete(md)
     db.commit()
+    # 记录操作日志
+    record_operation("DELETE", "工时管理", f"删除工时记录：{md_id}", request, current_user)
 
 
 @router.get("/projects/{project_id}/mandays/stats")

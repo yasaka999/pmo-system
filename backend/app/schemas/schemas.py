@@ -334,3 +334,27 @@ class SysDictBatchItem(BaseModel):
 
 class SysDictBatchSave(BaseModel):
     items: List[SysDictBatchItem]
+
+
+# ============ Operation Log Schemas ============
+class OperationLogBase(BaseModel):
+    action: str
+    module: Optional[str] = None
+    description: Optional[str] = None
+    request_method: Optional[str] = None
+    request_url: Optional[str] = None
+    ip_address: Optional[str] = None
+    user_agent: Optional[str] = None
+
+class OperationLogCreate(OperationLogBase):
+    user_id: Optional[int] = None
+    username: Optional[str] = None
+
+class OperationLogOut(OperationLogBase):
+    id: int
+    user_id: Optional[int] = None
+    username: Optional[str] = None
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True

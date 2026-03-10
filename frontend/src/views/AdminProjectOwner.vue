@@ -77,7 +77,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import api from '@/api'
+import { adminApi } from '@/api'
 
 const loading = ref(false)
 const submitting = ref(false)
@@ -93,7 +93,7 @@ const form = reactive({
 const loadProjects = async () => {
   loading.value = true
   try {
-    projects.value = await api.admin.getProjectOwners()
+    projects.value = await adminApi.getProjectOwners()
   } catch (error) {
     ElMessage.error('加载项目列表失败')
   } finally {
@@ -104,7 +104,7 @@ const loadProjects = async () => {
 // 加载用户列表
 const loadUsers = async () => {
   try {
-    users.value = await api.admin.getUsers()
+    users.value = await adminApi.getUsers()
   } catch (error) {
     ElMessage.error('加载用户列表失败')
   }
@@ -126,7 +126,7 @@ const confirmReassign = async () => {
   
   submitting.value = true
   try {
-    const result = await api.admin.reassignOwner(currentProject.value.id, form.newOwnerId)
+    const result = await adminApi.reassignOwner(currentProject.value.id, form.newOwnerId)
     ElMessage.success(`负责人已更新为 ${result.new_owner_name}`)
     dialogVisible.value = false
     loadProjects() // 刷新列表
@@ -159,4 +159,3 @@ h2 {
   font-size: 14px;
 }
 </style>
-</script>

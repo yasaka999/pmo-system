@@ -58,6 +58,11 @@
           </el-menu-item>
         </template>
 
+          <el-menu-item index="/operation-logs">
+            <el-icon><Document /></el-icon>
+            <template #title>操作日志</template>
+          </el-menu-item>
+
         <template v-if="auth.user && ['admin', 'pmo'].includes(auth.user.role)">
           <el-divider v-if="!collapsed" style="border-color:#2d3e58;margin:8px 0"/>
           <div v-if="!collapsed" class="sidebar-section">系统管理</div>
@@ -178,6 +183,11 @@
             <template #title>报告生成</template>
           </el-menu-item>
         </template>
+
+          <el-menu-item index="/operation-logs">
+            <el-icon><Document /></el-icon>
+            <template #title>操作日志</template>
+          </el-menu-item>
 
         <template v-if="auth.user && ['admin', 'pmo'].includes(auth.user.role)">
           <el-divider style="border-color:#2d3e58;margin:8px 0"/>

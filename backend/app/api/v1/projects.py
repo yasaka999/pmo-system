@@ -1,5 +1,5 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from app.db.session import get_db
@@ -10,6 +10,7 @@ from app.models.risk import Risk
 from app.models.manday import ManDay
 from app.schemas.schemas import ProjectCreate, ProjectUpdate, ProjectOut, ProjectSummary
 from app.core.security import get_current_user, get_current_active_user
+from app.core.logging import record_operation
 from app.models.user import User
 
 router = APIRouter()
@@ -135,6 +136,7 @@ def list_projects(
 
 @router.post("/", response_model=ProjectOut, status_code=201)
 def create_project(
+    request: Request,
     project_in: ProjectCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -145,6 +147,7 @@ def create_project(
     db.add(project)
     db.commit()
     db.refresh(project)
+    record_operation("CREATE", "项目管理", f"创建项目：{project.code} - {project.name}", request, current_user)
     return project
 
 
@@ -168,6 +171,7 @@ def get_project(
 def update_project(
     project_id: int,
     project_in: ProjectUpdate,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -180,12 +184,14 @@ def update_project(
         setattr(project, field, value)
     db.commit()
     db.refresh(project)
+    record_operation("UPDATE", "项目管理", f"更新项目：{project.code}", request, current_user)
     return project
 
 
 @router.delete("/{project_id}", status_code=204)
 def delete_project(
     project_id: int,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -194,8 +200,10 @@ def delete_project(
         raise HTTPException(status_code=404, detail="项目不存在")
     if not _can_manage(project, current_user):
         raise HTTPException(status_code=403, detail="无权删除该项目，仅项目创建者或管理员可删除")
+    project_code = project.code
     db.delete(project)
     db.commit()
+    record_operation("DELETE", "项目管理", f"删除项目：{project_code}", request, current_user)
 
 
 

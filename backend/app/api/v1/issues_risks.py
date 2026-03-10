@@ -1,5 +1,6 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
+from app.core.logging import record_operation
 from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.models.issue import Issue
@@ -32,16 +33,17 @@ def list_issues(
 
 
 @router.post("/projects/{project_id}/issues", response_model=IssueOut, status_code=201)
-def create_issue(project_id: int, issue_in: IssueCreate, db: Session = Depends(get_db), _: User = Depends(get_current_user)):
+def create_issue(project_id: int, issue_in: IssueCreate, request: Request, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     issue = Issue(**{**issue_in.model_dump(), "project_id": project_id})
     db.add(issue)
     db.commit()
     db.refresh(issue)
+    record_operation("CREATE", "问题管理", f"创建问题：{issue.title}", request, current_user)
     return issue
 
 
 @router.put("/issues/{issue_id}", response_model=IssueOut)
-def update_issue(issue_id: int, issue_in: IssueUpdate, db: Session = Depends(get_db), _: User = Depends(get_current_user)):
+def update_issue(issue_id: int, issue_in: IssueUpdate, request: Request, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     issue = db.query(Issue).filter(Issue.id == issue_id).first()
     if not issue:
         raise HTTPException(status_code=404, detail="问题不存在")
@@ -49,16 +51,18 @@ def update_issue(issue_id: int, issue_in: IssueUpdate, db: Session = Depends(get
         setattr(issue, k, v)
     db.commit()
     db.refresh(issue)
+    record_operation("UPDATE", "问题管理", f"更新问题：{issue_id}", request, current_user)
     return issue
 
 
 @router.delete("/issues/{issue_id}", status_code=204)
-def delete_issue(issue_id: int, db: Session = Depends(get_db), _: User = Depends(get_current_user)):
+def delete_issue(issue_id: int, request: Request, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     issue = db.query(Issue).filter(Issue.id == issue_id).first()
     if not issue:
         raise HTTPException(status_code=404, detail="问题不存在")
     db.delete(issue)
     db.commit()
+    record_operation("DELETE", "问题管理", f"删除问题：{issue_id}", request, current_user)
 
 
 # ── 风险台账 ────────────────────────────────────────────
@@ -76,7 +80,7 @@ def list_risks(
 
 
 @router.post("/projects/{project_id}/risks", response_model=RiskOut, status_code=201)
-def create_risk(project_id: int, risk_in: RiskCreate, db: Session = Depends(get_db), _: User = Depends(get_current_user)):
+def create_risk(project_id: int, risk_in: RiskCreate, request: Request, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     data = risk_in.model_dump()
     data["project_id"] = project_id
     data["level"] = RISK_MATRIX.get((risk_in.probability, risk_in.impact), "中")
@@ -84,11 +88,12 @@ def create_risk(project_id: int, risk_in: RiskCreate, db: Session = Depends(get_
     db.add(risk)
     db.commit()
     db.refresh(risk)
+    record_operation("CREATE", "风险管理", f"创建风险：{risk.title}", request, current_user)
     return risk
 
 
 @router.put("/risks/{risk_id}", response_model=RiskOut)
-def update_risk(risk_id: int, risk_in: RiskUpdate, db: Session = Depends(get_db), _: User = Depends(get_current_user)):
+def update_risk(risk_id: int, risk_in: RiskUpdate, request: Request, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     risk = db.query(Risk).filter(Risk.id == risk_id).first()
     if not risk:
         raise HTTPException(status_code=404, detail="风险不存在")
@@ -101,13 +106,15 @@ def update_risk(risk_id: int, risk_in: RiskUpdate, db: Session = Depends(get_db)
     risk.level = RISK_MATRIX.get((prob, impact), "中")
     db.commit()
     db.refresh(risk)
+    record_operation("UPDATE", "风险管理", f"更新风险：{risk_id}", request, current_user)
     return risk
 
 
 @router.delete("/risks/{risk_id}", status_code=204)
-def delete_risk(risk_id: int, db: Session = Depends(get_db), _: User = Depends(get_current_user)):
+def delete_risk(risk_id: int, request: Request, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     risk = db.query(Risk).filter(Risk.id == risk_id).first()
     if not risk:
         raise HTTPException(status_code=404, detail="风险不存在")
     db.delete(risk)
     db.commit()
+    record_operation("DELETE", "风险管理", f"删除风险：{risk_id}", request, current_user)
