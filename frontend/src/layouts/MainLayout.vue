@@ -58,10 +58,10 @@
           </el-menu-item>
         </template>
 
-        <template v-if="auth.user && auth.user.role === 'admin'">
+        <template v-if="auth.user && ['admin', 'pmo'].includes(auth.user.role)">
           <el-divider v-if="!collapsed" style="border-color:#2d3e58;margin:8px 0"/>
           <div v-if="!collapsed" class="sidebar-section">系统管理</div>
-          <el-menu-item index="/system/users">
+          <el-menu-item index="/system/users" v-if="auth.user && auth.user.role === 'admin'">
             <el-icon><UserFilled /></el-icon>
             <template #title>用户管理</template>
           </el-menu-item>
@@ -179,10 +179,10 @@
           </el-menu-item>
         </template>
 
-        <template v-if="auth.user && auth.user.role === 'admin'">
+        <template v-if="auth.user && ['admin', 'pmo'].includes(auth.user.role)">
           <el-divider style="border-color:#2d3e58;margin:8px 0"/>
           <div class="sidebar-section">系统管理</div>
-          <el-menu-item index="/system/users">
+          <el-menu-item index="/system/users" v-if="auth.user && auth.user.role === 'admin'">
             <el-icon><UserFilled /></el-icon>
             <template #title>用户管理</template>
           </el-menu-item>
