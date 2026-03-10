@@ -715,7 +715,7 @@ def generate_portfolio_report_word(db: Session, report_date: Optional[date] = No
             ).all()
             if proj_risks:
                 risk_rows = [(r.title, _get_dict_label("risk_prob", r.probability), _get_dict_label("risk_impact", r.impact), _get_dict_label("risk_level", r.level) or "-", r.mitigation or "-") for r in proj_risks]
-                doc.add_paragraph("  高影响开放风险：").runs[0].italic = True
+                doc.add_paragraph("  高等级开放风险：").runs[0].italic = True
                 _add_table(doc, ["风险标题", "概率", "影响", "等级", "应对措施"], risk_rows)
     else:
         doc.add_paragraph("✅ 当前所有项目均处于正常状态，无需重点关注。")
@@ -745,7 +745,7 @@ def generate_portfolio_report_word(db: Session, report_date: Optional[date] = No
         doc.add_paragraph("✅ 当前无高严重等级未关闭问题。")
 
     doc.add_paragraph()
-    _add_heading(doc, "3.2 高影响开放风险 Top 10", level=3)
+    _add_heading(doc, "3.2 高等级开放风险 Top 10", level=3)
     # 按风险等级（level）筛选高风险，而不是按影响（impact）
     top_risks = db.query(Risk).filter(
         Risk.status.in_(["rs_open", "rs_doing"]),
@@ -917,8 +917,8 @@ def generate_portfolio_excel(db: Session, report_date: Optional[date] = None) ->
                 _color_cell(cell, COLOR_RED)
     _auto_col_width(ws2)
 
-    # ── Sheet 3: 全局高影响风险 ────────────────────
-    ws3 = wb.create_sheet("高影响风险")
+    # ── Sheet 3: 全局高等级风险 ────────────────────
+    ws3 = wb.create_sheet("高等级风险")
     headers3 = ["所属项目", "风险标题", "描述", "概率", "影响", "风险等级", "负责人", "应对措施", "状态"]
     for c, h in enumerate(headers3, 1):
         cell = ws3.cell(row=1, column=c, value=h)
