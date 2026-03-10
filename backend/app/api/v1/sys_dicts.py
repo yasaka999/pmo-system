@@ -37,7 +37,7 @@ def create_sys_dict(
     """
     创建数据字典项（仅限管理员，此处简单起见暂未硬性校验 admin 角色，后续可通过依赖注入完善）。
     """
-    if current_user.role != "admin":
+    if current_user.role not in ["admin", "pmo"]:
          raise HTTPException(status_code=403, detail="没有权限执行此操作")
     return crud_sys_dict.create_sys_dict(db=db, sys_dict=sys_dict)
 
@@ -51,7 +51,7 @@ def update_sys_dict(
     """
     更新数据字典项
     """
-    if current_user.role != "admin":
+    if current_user.role not in ["admin", "pmo"]:
          raise HTTPException(status_code=403, detail="没有权限执行此操作")
     
     db_dict = crud_sys_dict.update_sys_dict(db=db, dict_id=dict_id, sys_dict=sys_dict)
@@ -68,7 +68,7 @@ def delete_sys_dict(
     """
     删除数据字典项
     """
-    if current_user.role != "admin":
+    if current_user.role not in ["admin", "pmo"]:
          raise HTTPException(status_code=403, detail="没有权限执行此操作")
          
     success = crud_sys_dict.delete_sys_dict(db=db, dict_id=dict_id)
@@ -85,7 +85,7 @@ def batch_save_sys_dicts(
     """
     批量保存字典项（新增、更新、删除一次完成）
     """
-    if current_user.role != "admin":
+    if current_user.role not in ["admin", "pmo"]:
         raise HTTPException(status_code=403, detail="没有权限执行此操作")
     
     items = [item.model_dump() for item in data.items]
