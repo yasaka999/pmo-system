@@ -11,7 +11,7 @@
       <el-table-column prop="role" label="角色" width="120">
         <template #default="{ row }">
           <el-tag :type="row.role === 'admin' ? 'danger' : (row.role === 'pmo' ? 'warning' : '')">
-            {{ row.role }}
+            {{ row.role === 'admin' ? '系统管理员' : (row.role === 'pmo' ? 'PMO' : (row.role === 'member' ? '项目成员' : '只读用户')) }}
           </el-tag>
         </template>
       </el-table-column>
