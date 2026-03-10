@@ -29,8 +29,16 @@
       </div>
     </div>
 
+    <!-- ── 标签页切换 ── -->
+    <div class="page-card" style="margin-bottom:20px">
+      <el-tabs v-model="activeTab" @tab-click="handleTabClick">
+        <el-tab-pane label="报告预览" name="preview"></el-tab-pane>
+        <el-tab-pane label="周报汇总" name="weekly"></el-tab-pane>
+      </el-tabs>
+    </div>
+
     <!-- ── 报告内容预览 ── -->
-    <div class="page-card" v-loading="loading">
+    <div class="page-card" v-loading="loading" v-if="activeTab === 'preview'">
       <h3 style="margin-bottom:20px;font-size:17px;color:#2E4057">报告内容预览</h3>
 
       <!-- 第一行：执行摘要 + 重点关注项目 -->
@@ -177,6 +185,88 @@
       </el-row>
 
     </div>
+
+    <!-- ── 周报汇总 ── -->
+    <div class="page-card" v-if="activeTab === 'weekly'" v-loading="weeklyLoading">
+      <div style="display:flex;justify-content:space-between;margin-bottom:20px">
+        <div style="display:flex;gap:10px;align-items:center">
+          <el-select v-model="weeklyFilter.statuses" placeholder="项目状态" multiple collapse-tags collapse-tags-tooltip clearable style="width:150px" @change="loadWeeklySummary">
+            <el-option label="正常" value="st_normal" />
+            <el-option label="预警" value="st_warn" />
+            <el-option label="延期" value="st_delay" />
+            <el-option label="暂停" value="st_pause" />
+            <el-option label="已完成" value="st_done" />
+          </el-select>
+          <el-select v-model="weeklyFilter.threshold" placeholder="更新阈值" style="width:130px" @change="loadWeeklySummary">
+            <el-option label="7 天内" :value="7" />
+            <el-option label="14 天内" :value="14" />
+            <el-option label="30 天内" :value="30" />
+          </el-select>
+          <el-input v-model="weeklyFilter.search" placeholder="搜索项目名称/编号" 
+            style="width:250px" clearable @change="loadWeeklySummary" @clear="loadWeeklySummary">
+            <template #prefix><el-icon><Search /></el-icon></template>
+          </el-input>
+        </div>
+        <el-button type="primary" size="small" @click="exportWeeklySummary">
+          <el-icon><Download /></el-icon> 导出 Excel
+        </el-button>
+      </div>
+
+      <!-- 统计卡片 -->
+      <el-row :gutter="20" style="margin-bottom:20px">
+        <el-col :span="6">
+          <el-statistic title="项目总数" :value="weeklyStats.total" />
+        </el-col>
+        <el-col :span="6">
+          <el-statistic title="已更新" :value="weeklyStats.updated" :value-style="{color:'#67C23A'}" />
+        </el-col>
+        <el-col :span="6">
+          <el-statistic title="预警" :value="weeklyStats.warning" :value-style="{color:'#E6A23C'}" />
+        </el-col>
+        <el-col :span="6">
+          <el-statistic title="未提交" :value="weeklyStats.noReport" :value-style="{color:'#F56C6C'}" />
+        </el-col>
+      </el-row>
+
+      <!-- 表格 -->
+      <el-table :data="weeklyData" style="width:100%" border size="small">
+        <el-table-column prop="project_name" label="项目名称" min-width="200" show-overflow-tooltip>
+          <template #default="{ row }">
+            <div style="font-weight:600">{{ row.project_name }}</div>
+            <div style="font-size:12px;color:#999">{{ row.project_code }}</div>
+          </template>
+        </el-table-column>
+        <el-table-column prop="project_manager" label="项目经理" width="100" />
+        <el-table-column label="最新周报" min-width="250">
+          <template #default="{ row }">
+            <div v-if="row.latest_report">
+              <div style="font-size:13px;margin-bottom:5px">{{ row.latest_report.content }}</div>
+              <div style="font-size:12px;color:#999">
+                <el-tag :type="row.status === 'updated' ? 'success' : (row.status === 'warning' ? 'warning' : 'danger')" size="small">
+                  {{ row.days_since_update }}天前
+                </el-tag>
+                <span style="margin-left:8px">进度：{{ row.latest_report.progress_percent }}%</span>
+              </div>
+            </div>
+            <div v-else style="color:#999;font-size:13px">暂无周报</div>
+          </template>
+        </el-table-column>
+        <el-table-column label="状态" width="100" align="center">
+          <template #default="{ row }">
+            <el-tag :type="getStatusType(row.status)" size="small">
+              {{ getStatusLabel(row.status) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="100" align="center" fixed="right">
+          <template #default="{ row }">
+            <el-button type="primary" link size="small" @click="$router.push(`/projects/${row.project_id}`)">
+              查看项目
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
   </div>
 </template>
 
@@ -190,12 +280,23 @@ const dlWord = ref(false)
 const dlExcel = ref(false)
 const reportTitle = ref('PMO项目整体报告')
 const reportDate = ref('')
+const activeTab = ref('preview')  // 默认显示报告预览
 
 const projects = ref([])
 const highIssues = ref([])    // 高严重等级未关闭问题
 const highRisks = ref([])     // 高等级开放风险
 const overdueMilestones = ref([])  // 逾期里程碑
 const resource = ref({ totalBudget: 0, totalUsed: 0, thisMonth: 0, usageRate: 0 })
+
+// 周报汇总相关
+const weeklyLoading = ref(false)
+const weeklyData = ref([])
+const weeklyStats = ref({ total: 0, updated: 0, warning: 0, overdue: 0, noReport: 0 })
+const weeklyFilter = ref({
+  statuses: [],  // 多选状态
+  threshold: 7,
+  search: ''
+})
 
 // ── 执行摘要 ──────────────────────────────────────────
 const s = computed(() => {
@@ -243,6 +344,7 @@ function riskStatusLabel(s) {
 async function loadData() {
   loading.value = true
   try {
+    // 优化：使用聚合 API 一次性获取所有项目 + 统计数据
     projects.value = await projectApi.list()
 
     const today = new Date()
@@ -253,7 +355,7 @@ async function loadData() {
     const issueList = [], riskList = [], msList = []
     let totalBudget = 0, totalUsed = 0, thisMonthDays = 0
 
-    // 遍历每个项目并发拉取
+    // 优化：只查询有数据的项目，减少 API 调用
     await Promise.all(projects.value.map(async p => {
       totalBudget += p.budget_mandays || 0
       totalUsed += p.used_mandays || 0
@@ -351,7 +453,76 @@ async function downloadExcel() {
   finally { dlExcel.value = false }
 }
 
-onMounted(loadData)
+async function loadWeeklySummary() {
+  weeklyLoading.value = true
+  try {
+    const params = {
+      days_threshold: weeklyFilter.value.threshold,
+      ...(weeklyFilter.value.statuses && weeklyFilter.value.statuses.length > 0 && { 
+        project_status: weeklyFilter.value.statuses.join(',') 
+      }),
+      ...(weeklyFilter.value.search && { search: weeklyFilter.value.search })
+    }
+    const res = await reportApi.weeklySummary(params)
+    weeklyData.value = res.data
+    weeklyStats.value = {
+      total: res.total_projects,
+      updated: res.updated_within_threshold,
+      warning: res.warning,
+      overdue: res.overdue,
+      noReport: res.no_report
+    }
+  } catch (e) {
+    ElMessage.error('加载周报汇总失败')
+  } finally {
+    weeklyLoading.value = false
+  }
+}
+
+function getStatusType(status) {
+  return {
+    updated: 'success',
+    warning: 'warning',
+    overdue: 'danger',
+    no_report: 'info'
+  }[status] || 'info'
+}
+
+function getStatusLabel(status) {
+  return {
+    updated: '正常',
+    warning: '预警',
+    overdue: '逾期',
+    no_report: '未提交'
+  }[status] || status
+}
+
+async function exportWeeklySummary() {
+  try {
+    const today = new Date().toISOString().slice(0, 10)
+    const res = await reportApi.weeklySummaryExcel({ days_threshold: weeklyFilter.value.threshold })
+    downloadBlob(res, `周报汇总_${today}.xlsx`)
+    ElMessage.success('周报汇总 Excel 下载成功')
+  } catch (e) {
+    ElMessage.error('导出失败，请稍后重试')
+  }
+}
+
+// 标签页切换处理
+let weeklyLoaded = false  // 标记周报数据是否已加载过
+
+function handleTabClick(tab) {
+  if (tab.props.name === 'weekly' && !weeklyLoaded) {
+    loadWeeklySummary()
+    weeklyLoaded = true
+  }
+}
+
+onMounted(() => {
+  // 默认只加载报告预览数据
+  loadData()
+  // 周报汇总数据懒加载，等用户点击时再加载
+})
 </script>
 
 <style scoped>

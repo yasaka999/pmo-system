@@ -27,6 +27,7 @@ from app.models.milestone import Milestone, Task
 from app.models.issue import Issue
 from app.models.risk import Risk
 from app.models.manday import ManDay
+from app.models.weekly_progress import WeeklyProgress
 
 # ──────────────────────────────────────────────────────────
 # 颜色常量
@@ -958,6 +959,212 @@ def generate_portfolio_excel(db: Session, report_date: Optional[date] = None) ->
                 _color_cell(cell, COLOR_RED)
     _auto_col_width(ws4)
 
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    return buf.read()
+
+
+# ──────────────────────────────────────────────────────────
+# 8. 周报汇总查询
+# ──────────────────────────────────────────────────────────
+def get_weekly_summary(
+    db: Session,
+    days_threshold: int = 7,
+    project_status: Optional[str] = None,  # 支持多选，逗号分隔：st_normal,st_warn
+    search: Optional[str] = None
+) -> dict:
+    """
+    获取所有项目的最新周报汇总
+    """
+    from sqlalchemy import text
+    
+    # 构建查询
+    query = text("""
+        SELECT * FROM v_weekly_summary
+        WHERE 1=1
+        """)
+    
+    # 添加筛选条件
+    conditions = []
+    params = {}
+    
+    if project_status and project_status.strip():
+        # 支持多选状态
+        statuses = [s.strip() for s in project_status.split(',')]
+        if len(statuses) == 1:
+            conditions.append("project_status = :project_status")
+            params["project_status"] = statuses[0]
+        else:
+            conditions.append("project_status = ANY(:project_status)")
+            params["project_status"] = statuses
+    
+    if search:
+        conditions.append("(project_name ILIKE :search OR project_code ILIKE :search)")
+        params["search"] = f"%{search}%"
+    
+    if conditions:
+        query = text(str(query) + " AND " + " AND ".join(conditions))
+    
+    # 执行查询
+    result = db.execute(query, params).fetchall()
+    
+    # 构建返回数据
+    data = []
+    stats = {
+        "total": len(result),
+        "updated_within_threshold": 0,
+        "warning": 0,
+        "overdue": 0,
+        "no_report": 0
+    }
+    
+    for row in result:
+        days = row.days_since_update
+        
+        # 确定状态
+        if days is None:
+            status = "no_report"
+            stats["no_report"] += 1
+        elif days <= days_threshold:
+            status = "updated"
+            stats["updated_within_threshold"] += 1
+        elif days <= days_threshold * 4:
+            status = "warning"
+            stats["warning"] += 1
+        else:
+            status = "overdue"
+            stats["overdue"] += 1
+        
+        # 合并周报内容（工作内容 + 下周计划 + 遇到问题）
+        full_report_content = ""
+        if row.report_id:
+            parts = []
+            if row.content:
+                parts.append(row.content)
+            if row.next_plan:
+                parts.append(row.next_plan)
+            if row.issues:
+                parts.append(row.issues)
+            full_report_content = " | ".join(parts) if parts else "暂无周报内容"
+        
+        data.append({
+            "project_id": row.project_id,
+            "project_name": row.project_name,
+            "project_code": row.project_code,
+            "project_manager": row.project_manager,
+            "project_status": row.project_status,
+            "project_phase": row.project_phase,
+            "latest_report": {
+                "id": row.report_id,
+                "content": full_report_content,  # 使用合并后的完整内容
+                "record_date": row.record_date.isoformat() if row.record_date else None,
+                "progress_percent": row.progress_percent,
+                "next_plan": row.next_plan,
+                "issues": row.issues,
+                "creator_name": row.creator_name,
+                "created_at": row.report_created_at.isoformat() if row.report_created_at else None,
+            } if row.report_id else None,
+            "days_since_update": days,
+            "status": status
+        })
+    
+    return {
+        "total_projects": stats["total"],
+        "updated_within_threshold": stats["updated_within_threshold"],
+        "warning": stats["warning"],
+        "overdue": stats["overdue"],
+        "no_report": stats["no_report"],
+        "data": data
+    }
+
+
+# ──────────────────────────────────────────────────────────
+# 9. 周报汇总 Excel 导出
+# ──────────────────────────────────────────────────────────
+def generate_weekly_summary_excel(db: Session, days_threshold: int = 7) -> bytes:
+    """
+    生成周报汇总 Excel 文件
+    """
+    from datetime import date, datetime
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    from openpyxl.utils import get_column_letter
+    import io
+    
+    # 获取数据
+    data = get_weekly_summary(db, days_threshold)
+    
+    # 创建工作簿
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "周报汇总"
+    
+    # 样式
+    header_fill = PatternFill("solid", fgColor="4472C4")
+    header_font = Font(bold=True, color="FFFFFF", size=11, name="宋体")
+    data_font = Font(name="宋体", size=10)
+    thin = Side(style="thin")
+    border = Border(left=thin, right=thin, top=thin, bottom=thin)
+    
+    # 表头
+    headers = ["项目名称", "项目编号", "项目经理", "项目状态", "最新周报内容", "记录日期", 
+               "进度%", "更新天数", "状态"]
+    for c, h in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=c, value=h)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        cell.border = border
+    
+    # 数据行
+    for r, item in enumerate(data["data"], 2):
+        report = item.get("latest_report", {})
+        row_data = [
+            item["project_name"],
+            item["project_code"],
+            item["project_manager"] or "",
+            {"st_normal": "正常", "st_warn": "预警", "st_delay": "延期", 
+             "st_pause": "暂停", "st_done": "已完成"}.get(item["project_status"], item["project_status"]),
+            report.get("content", "") if report and report.get("content") else "暂无周报",
+            report.get("record_date", "") if report else "",
+            report.get("progress_percent", "") if report else "",
+            item["days_since_update"] if item["days_since_update"] is not None else "从未提交",
+            {"updated": "正常", "warning": "预警", "overdue": "逾期", "no_report": "未提交"}.get(item["status"], "")
+        ]
+        
+        for c, val in enumerate(row_data, 1):
+            cell = ws.cell(row=r, column=c, value=val)
+            cell.font = data_font
+            cell.alignment = Alignment(horizontal="left", vertical="center", wrap_text=True)
+            cell.border = border
+            
+            # 状态列着色
+            if c == 9:
+                color_map = {"正常": "C6EFCE", "预警": "FFEB9C", "逾期": "FFC7CE", "未提交": "FFCCCC"}
+                if val in color_map:
+                    cell.fill = PatternFill("solid", fgColor=color_map[val])
+    
+    # 自动列宽
+    for col in ws.columns:
+        max_len = max(len(str(cell.value)) if cell.value else 0 for cell in col)
+        col_letter = get_column_letter(col[0].column)
+        ws.column_dimensions[col_letter].width = min(max_len + 4, 50)
+    
+    # 添加统计信息
+    ws2 = wb.create_sheet("统计概览")
+    stats_data = [
+        ("项目总数", data["total_projects"]),
+        ("已更新", data["updated_within_threshold"]),
+        ("预警", data["warning"]),
+        ("逾期", data["overdue"]),
+        ("未提交", data["no_report"]),
+    ]
+    for r, (label, value) in enumerate(stats_data, 1):
+        ws2.cell(row=r, column=1, value=label).font = Font(bold=True, name="宋体")
+        ws2.cell(row=r, column=2, value=value).font = Font(name="宋体")
+    
+    # 保存
     buf = io.BytesIO()
     wb.save(buf)
     buf.seek(0)

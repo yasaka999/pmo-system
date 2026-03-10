@@ -21,6 +21,8 @@ from app.services.report_service import (
     generate_status_excel,
     generate_portfolio_report_word,
     generate_portfolio_excel,
+    get_weekly_summary,
+    generate_weekly_summary_excel,
 )
 
 router = APIRouter()
@@ -42,7 +44,7 @@ def weekly_report(
     db: Session = Depends(get_db),
     _: User = Depends(get_current_user),
 ):
-    """下载项目周报（Word格式）"""
+    """下载项目周报（Word 格式）"""
     try:
         data = generate_weekly_report(project_id, db, report_date)
     except ValueError as e:
@@ -66,7 +68,7 @@ def monthly_report(
     db: Session = Depends(get_db),
     _: User = Depends(get_current_user),
 ):
-    """下载项目月报（Word格式）"""
+    """下载项目月报（Word 格式）"""
     try:
         data = generate_monthly_report(project_id, year, month, db)
     except ValueError as e:
@@ -88,7 +90,7 @@ def issue_risk_report(
     db: Session = Depends(get_db),
     _: User = Depends(get_current_user),
 ):
-    """下载问题与风险台账（Excel格式）"""
+    """下载问题与风险台账（Excel 格式）"""
     try:
         data = generate_issue_risk_excel(project_id, db)
     except Exception as e:
@@ -107,7 +109,7 @@ def manday_report(
     db: Session = Depends(get_db),
     _: User = Depends(get_current_user),
 ):
-    """下载人天统计报表（Excel格式）"""
+    """下载人天统计报表（Excel 格式）"""
     try:
         data = generate_manday_excel(project_id, db)
     except Exception as e:
@@ -125,7 +127,7 @@ def status_overview_report(
     db: Session = Depends(get_db),
     _: User = Depends(get_current_user),
 ):
-    """下载多项目状态一览（Excel格式）"""
+    """下载多项目状态一览（Excel 格式）"""
     try:
         data = generate_status_excel(db)
     except Exception as e:
@@ -144,13 +146,13 @@ def portfolio_report_word(
     db: Session = Depends(get_db),
     _: User = Depends(get_current_user),
 ):
-    """下载项目组合整体报告（Word格式，包含执行摘要/重点关注/全局风险问题/里程碑跟踪/状态一览）"""
+    """下载项目组合整体报告（Word 格式，包含执行摘要/重点关注/全局风险问题/里程碑跟踪/状态一览）"""
     try:
         data = generate_portfolio_report_word(db, report_date)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"报告生成失败：{str(e)}")
 
-    filename = f"PMO项目组合综合报告_{report_date or date.today()}.docx"
+    filename = f"PMO 项目组合综合报告_{report_date or date.today()}.docx"
     return Response(
         content=data,
         media_type=WORD_MIME,
@@ -164,15 +166,58 @@ def portfolio_report_excel(
     db: Session = Depends(get_db),
     _: User = Depends(get_current_user),
 ):
-    """下载项目组合数据汇总（Excel格式，4个Sheet：状态一览/高危问题/高影响风险/逾期里程碑）"""
+    """下载项目组合数据汇总（Excel 格式，4 个 Sheet：状态一览/高危问题/高影响风险/逾期里程碑）"""
     try:
         data = generate_portfolio_excel(db, report_date)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"报告生成失败：{str(e)}")
 
-    filename = f"PMO项目组合数据汇总_{report_date or date.today()}.xlsx"
+    filename = f"PMO 项目组合数据汇总_{report_date or date.today()}.xlsx"
     return Response(
         content=data,
         media_type=EXCEL_MIME,
         headers={"Content-Disposition": _disposition(filename)},
     )
+
+
+@router.get("/reports/weekly-summary")
+def weekly_summary(
+    days_threshold: int = 7,  # 预警阈值：多少天未更新
+    project_status: Optional[str] = None,  # 按项目状态筛选
+    search: Optional[str] = None,  # 搜索项目名称/编号
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+):
+    """
+    获取所有项目的最新周报汇总
+    
+    - **days_threshold**: 预警阈值（默认 7 天）
+    - **project_status**: 项目状态筛选（st_normal/st_warn/st_delay/st_pause/st_done）
+    - **search**: 搜索关键词（项目名称或编号）
+    """
+    try:
+        data = get_weekly_summary(db, days_threshold, project_status, search)
+        return data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"查询失败：{str(e)}")
+
+
+@router.get("/reports/weekly-summary/excel")
+def weekly_summary_excel(
+    days_threshold: int = 7,
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+):
+    """
+    导出周报汇总 Excel 文件
+    """
+    try:
+        data = generate_weekly_summary_excel(db, days_threshold)
+        today = date.today().isoformat()
+        return Response(
+            content=data,
+            media_type=EXCEL_MIME,
+            headers={"Content-Disposition": _disposition(f"周报汇总_{today}.xlsx")},
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"导出失败：{str(e)}")

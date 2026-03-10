@@ -150,6 +150,12 @@ export const reportApi = {
         headers: { Authorization: `Bearer ${useAuthStore().token}` },
         params
     }),
+    weeklySummary: (params) => api.get('/reports/weekly-summary', { params }),
+    weeklySummaryExcel: (params) => axios.get(`/api/v1/reports/weekly-summary/excel`, {
+        responseType: 'blob',
+        headers: { Authorization: `Bearer ${useAuthStore().token}` },
+        params
+    }),
 }
 
 // 通用下载函数
