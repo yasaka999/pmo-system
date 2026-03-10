@@ -7,7 +7,7 @@ const api = axios.create({
     timeout: 30000,
 })
 
-// 请求拦截：自动附加Token
+// 请求拦截：自动附加 Token
 api.interceptors.request.use(config => {
     const auth = useAuthStore()
     if (auth.token) {
@@ -30,13 +30,14 @@ api.interceptors.response.use(
     }
 )
 
-// ─── 认证 ─────────────────────────────────────
+// ============ 认证 ============
 export const authApi = {
     login: (data) => api.post('/auth/login', data, { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }),
     me: () => api.get('/auth/me'),
     register: (data) => api.post('/auth/register', data),
 }
-// ─── 用户管理 ──────────────────────────────────
+
+// ============ 用户管理 ============
 export const userApi = {
     list: (params) => api.get('/users/', { params }),
     create: (data) => api.post('/users/', data),
@@ -46,7 +47,7 @@ export const userApi = {
     changePassword: (data) => api.put('/users/me/password', data),
 }
 
-// ─── 数据字典 ──────────────────────────────────
+// ============ 数据字典 ============
 export const dictApi = {
     list: (params) => api.get('/sys-dicts/', { params }),
     create: (data) => api.post('/sys-dicts/', data),
@@ -55,17 +56,16 @@ export const dictApi = {
     batchSave: (items) => api.post('/sys-dicts/batch-save', { items }),
 }
 
-// ─── 项目 ─────────────────────────────────────
+// ============ 项目管理 ============
 export const projectApi = {
     list: (params) => api.get('/projects/', { params }),
-    listWithStats: () => api.get('/projects/all-with-stats'),  // 聚合 API（含统计数据）
     get: (id) => api.get(`/projects/${id}`),
     create: (data) => api.post('/projects/', data),
     update: (id, data) => api.put(`/projects/${id}`, data),
     remove: (id) => api.delete(`/projects/${id}`),
 }
 
-// ─── 里程碑 ───────────────────────────────────
+// ============ 里程碑 ============
 export const milestoneApi = {
     list: (pid) => api.get(`/projects/${pid}/milestones`),
     create: (pid, data) => api.post(`/projects/${pid}/milestones`, data),
@@ -73,7 +73,7 @@ export const milestoneApi = {
     remove: (id) => api.delete(`/milestones/${id}`),
 }
 
-// ─── 任务 ─────────────────────────────────────
+// ============ 任务 ============
 export const taskApi = {
     list: (pid) => api.get(`/projects/${pid}/tasks`),
     create: (pid, data) => api.post(`/projects/${pid}/tasks`, data),
@@ -81,7 +81,7 @@ export const taskApi = {
     remove: (id) => api.delete(`/tasks/${id}`),
 }
 
-// ─── 问题 ─────────────────────────────────────
+// ============ 问题 ============
 export const issueApi = {
     list: (pid, params) => api.get(`/projects/${pid}/issues`, { params }),
     create: (pid, data) => api.post(`/projects/${pid}/issues`, data),
@@ -89,7 +89,7 @@ export const issueApi = {
     remove: (id) => api.delete(`/issues/${id}`),
 }
 
-// ─── 风险 ─────────────────────────────────────
+// ============ 风险 ============
 export const riskApi = {
     list: (pid, params) => api.get(`/projects/${pid}/risks`, { params }),
     create: (pid, data) => api.post(`/projects/${pid}/risks`, data),
@@ -97,7 +97,7 @@ export const riskApi = {
     remove: (id) => api.delete(`/risks/${id}`),
 }
 
-// ─── 人天 ─────────────────────────────────────
+// ============ 人天 ============
 export const mandayApi = {
     list: (pid, params) => api.get(`/projects/${pid}/mandays`, { params }),
     create: (pid, data) => api.post(`/projects/${pid}/mandays`, data),
@@ -106,7 +106,7 @@ export const mandayApi = {
     stats: (pid) => api.get(`/projects/${pid}/mandays/stats`),
 }
 
-// ─── 周报进展 ──────────────────────────────────
+// ============ 周报 ============
 export const weeklyProgressApi = {
     list: (pid) => api.get(`/projects/${pid}/weekly-progress`),
     create: (pid, data) => api.post(`/projects/${pid}/weekly-progress`, data),
@@ -114,7 +114,7 @@ export const weeklyProgressApi = {
     remove: (id) => api.delete(`/weekly-progress/${id}`),
 }
 
-// ─── 报告 ─────────────────────────────────────
+// ============ 报告 ============
 export const reportApi = {
     weekly: (pid, date) => {
         const params = date ? { report_date: date } : {}
@@ -153,16 +153,21 @@ export const reportApi = {
     }),
     weeklySummary: (params) => api.get('/reports/weekly-summary', { params }),
     weeklySummaryExcel: (params) => axios.get(`/api/v1/reports/weekly-summary/excel`, {
-    },
-    admin: {
-        getProjectOwners: () => api.get('/admin/project-owners'),
-        getUsers: () => api.get('/admin/users'),
-        reassignOwner: (projectId, newOwnerId) => api.put(`/admin/project/${projectId}/owner`, newOwnerId),
         responseType: 'blob',
         headers: { Authorization: `Bearer ${useAuthStore().token}` },
         params
     }),
 }
+
+// ============ 管理员功能 ============
+export const adminApi = {
+    getProjectOwners: () => api.get('/admin/project-owners'),
+    getUsers: () => api.get('/admin/users'),
+    reassignOwner: (projectId, newOwnerId) => api.put(`/admin/project/${projectId}/owner`, { new_owner_id: newOwnerId }),
+}
+
+// 挂载到 api 对象上，方便组件使用
+api.admin = adminApi
 
 // 通用下载函数
 export function downloadBlob(response, filename) {
@@ -175,3 +180,4 @@ export function downloadBlob(response, filename) {
 }
 
 export default api
+
