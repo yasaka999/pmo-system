@@ -66,8 +66,24 @@
             <template #title>用户管理</template>
           </el-menu-item>
           <el-menu-item index="/system/config">
+          <el-menu-item index="/admin/project-owners" v-if="authStore.user && ['admin', 'pmo'].includes(authStore.user.role)">
+            <el-icon><User /></el-icon>
+            <template #title>项目负责人分配</template>
+          </el-menu-item>
             <el-icon><Setting /></el-icon>
+          <el-menu-item index="/admin/project-owners" v-if="authStore.user && ['admin', 'pmo'].includes(authStore.user.role)">
+            <el-icon><User /></el-icon>
+            <template #title>项目负责人分配</template>
+          </el-menu-item>
             <template #title>系统配置</template>
+          <el-menu-item index="/admin/project-owners" v-if="authStore.user && ['admin', 'pmo'].includes(authStore.user.role)">
+            <el-icon><User /></el-icon>
+            <template #title>项目负责人分配</template>
+          </el-menu-item>
+          </el-menu-item>
+          <el-menu-item index="/admin/project-owners" v-if="authStore.user && ['admin', 'pmo'].includes(authStore.user.role)">
+            <el-icon><User /></el-icon>
+            <template #title>项目负责人分配</template>
           </el-menu-item>
         </template>
       </el-menu>
@@ -190,8 +206,24 @@
             <template #title>用户管理</template>
           </el-menu-item>
           <el-menu-item index="/system/config">
+          <el-menu-item index="/admin/project-owners" v-if="authStore.user && ['admin', 'pmo'].includes(authStore.user.role)">
+            <el-icon><User /></el-icon>
+            <template #title>项目负责人分配</template>
+          </el-menu-item>
             <el-icon><Setting /></el-icon>
+          <el-menu-item index="/admin/project-owners" v-if="authStore.user && ['admin', 'pmo'].includes(authStore.user.role)">
+            <el-icon><User /></el-icon>
+            <template #title>项目负责人分配</template>
+          </el-menu-item>
             <template #title>系统配置</template>
+          <el-menu-item index="/admin/project-owners" v-if="authStore.user && ['admin', 'pmo'].includes(authStore.user.role)">
+            <el-icon><User /></el-icon>
+            <template #title>项目负责人分配</template>
+          </el-menu-item>
+          </el-menu-item>
+          <el-menu-item index="/admin/project-owners" v-if="authStore.user && ['admin', 'pmo'].includes(authStore.user.role)">
+            <el-icon><User /></el-icon>
+            <template #title>项目负责人分配</template>
           </el-menu-item>
         </template>
       </el-menu>

@@ -153,6 +153,11 @@ export const reportApi = {
     }),
     weeklySummary: (params) => api.get('/reports/weekly-summary', { params }),
     weeklySummaryExcel: (params) => axios.get(`/api/v1/reports/weekly-summary/excel`, {
+    },
+    admin: {
+        getProjectOwners: () => api.get('/admin/project-owners'),
+        getUsers: () => api.get('/admin/users'),
+        reassignOwner: (projectId, newOwnerId) => api.put(`/admin/project/${projectId}/owner`, newOwnerId),
         responseType: 'blob',
         headers: { Authorization: `Bearer ${useAuthStore().token}` },
         params
