@@ -79,7 +79,7 @@
         </el-col>
       </el-row>
 
-      <!-- 第二行：高优先级问题 + 高影响风险 -->
+      <!-- 第二行：高优先级问题 + 高等级风险 -->
       <el-row :gutter="20" style="margin-bottom:20px">
         <!-- 三、高优先级问题 -->
         <el-col :xs="24" :md="12">
@@ -99,10 +99,10 @@
           </div>
         </el-col>
 
-        <!-- 四、高影响风险 -->
+        <!-- 四、高等级风险 -->
         <el-col :xs="24" :md="12">
           <div class="preview-section">
-            <div class="preview-section-title">四、高影响风险</div>
+            <div class="preview-section-title">四、高等级风险</div>
             <el-table :data="highRisks" size="small" style="width:100%"
               :show-header="highRisks.length > 0" :border="false">
               <el-table-column prop="projectName" label="项目" width="110" show-overflow-tooltip />
@@ -113,7 +113,7 @@
                 </template>
               </el-table-column>
             </el-table>
-            <div v-if="highRisks.length === 0 && !loading" class="empty-hint">🎉 暂无高影响风险</div>
+            <div v-if="highRisks.length === 0 && !loading" class="empty-hint">🎉 暂无高等级风险</div>
           </div>
         </el-col>
       </el-row>
@@ -193,7 +193,7 @@ const reportDate = ref('')
 
 const projects = ref([])
 const highIssues = ref([])    // 高严重等级未关闭问题
-const highRisks = ref([])     // 高影响开放风险
+const highRisks = ref([])     // 高等级开放风险
 const overdueMilestones = ref([])  // 逾期里程碑
 const resource = ref({ totalBudget: 0, totalUsed: 0, thisMonth: 0, usageRate: 0 })
 
