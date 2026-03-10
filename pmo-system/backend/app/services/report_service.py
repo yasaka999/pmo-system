@@ -707,9 +707,10 @@ def generate_portfolio_report_word(db: Session, report_date: Optional[date] = No
                 doc.add_paragraph("  高危未关闭问题：").runs[0].italic = True
                 _add_table(doc, ["问题标题", "严重等级", "负责人", "期望解决", "状态"], issue_rows)
             # 高风险
+            # 按风险等级（level）筛选高风险，而不是按影响（impact）
             proj_risks = db.query(Risk).filter(
                 Risk.project_id == p.id,
-                Risk.impact == "ri_h",
+                Risk.level == "rl_h",
                 Risk.status.in_(["rs_open", "rs_doing"])
             ).all()
             if proj_risks:
@@ -745,9 +746,10 @@ def generate_portfolio_report_word(db: Session, report_date: Optional[date] = No
 
     doc.add_paragraph()
     _add_heading(doc, "3.2 高影响开放风险 Top 10", level=3)
+    # 按风险等级（level）筛选高风险，而不是按影响（impact）
     top_risks = db.query(Risk).filter(
         Risk.status.in_(["rs_open", "rs_doing"]),
-        Risk.impact == "ri_h"
+        Risk.level == "rl_h"
     ).limit(10).all()
 
     if top_risks:
@@ -921,8 +923,9 @@ def generate_portfolio_excel(db: Session, report_date: Optional[date] = None) ->
     for c, h in enumerate(headers3, 1):
         cell = ws3.cell(row=1, column=c, value=h)
         _excel_header_style(cell)
+    # 按风险等级（level）筛选高风险，而不是按影响（impact）
     top_risks = db.query(Risk).filter(
-        Risk.status.in_(["rs_open", "rs_doing"]), Risk.impact == "ri_h"
+        Risk.status.in_(["rs_open", "rs_doing"]), Risk.level == "rl_h"
     ).all()
     for r, risk in enumerate(top_risks, 2):
         row_data = [proj_map.get(risk.project_id, "?"), risk.title, risk.description,
